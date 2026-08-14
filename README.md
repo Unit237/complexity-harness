@@ -6,7 +6,7 @@
 
 **Find complexity with evidence. Preserve architectural intent. Give coding agents bounded work.**
 
-Complexity Harness is a dependency-free Python CLI that combines exact
+Complexity Harness is a Python CLI that combines parser-backed
 cyclomatic evidence, a canonical repository inventory, architectural memory,
 registered invariants, and approval-required refactor jobs.
 
@@ -25,7 +25,8 @@ keeps those signals separate and inspectable.
 
 ## What it does
 
-- Scans one Python repository with exact AST-based branch evidence.
+- Scans Python, JavaScript, JSX, TypeScript, TSX, Dart, Terraform/HCL, and shell
+  with parser-backed branch evidence.
 - Scans a multi-repository workspace from a canonical inventory.
 - Excludes aliases, duplicate checkouts, generated packages, and build outputs.
 - Gives duplicate symbols deterministic, collision-free finding IDs.
@@ -38,7 +39,7 @@ keeps those signals separate and inspectable.
 ```mermaid
 flowchart LR
     Inventory["Canonical repository inventory"] --> Scan["Repository scans"]
-    Code["Python source"] --> Scan
+    Code["Supported source files"] --> Scan
     Memory["Architectural memory"] --> Snapshot["Workspace snapshot"]
     Invariants["Registered invariants"] --> Snapshot
     Scan --> Snapshot
@@ -128,6 +129,24 @@ A minimal inventory looks like this:
 Only entries with `status: canonical` are scanned. Repository paths are
 resolved inside the workspace root, duplicate IDs and canonical paths fail
 closed, and aliases are retained as inventory context without being scanned.
+
+### Supported languages
+
+The scanner recognizes these source extensions:
+
+| Language | Extensions | Complexity scope |
+|---|---|---|
+| Python | `.py` | Functions and methods |
+| JavaScript / JSX | `.js`, `.jsx` | Functions, methods, and arrow functions |
+| TypeScript / TSX | `.ts`, `.tsx` | Functions, methods, and arrow functions |
+| Dart | `.dart` | Functions, methods, constructors, and function expressions |
+| Terraform / HCL | `.tf`, `.hcl` | Top-level blocks and module attributes |
+| Shell | `.sh` | The script body and named functions |
+
+Python uses the standard-library AST. The other languages use bundled
+Tree-sitter grammar wheels, so scanning does not fetch parsers or require a
+compiler at runtime. Generated, dependency, cache, and configured exclusion
+paths remain excluded for every language.
 
 The workspace command also discovers:
 

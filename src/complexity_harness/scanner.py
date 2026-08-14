@@ -2,20 +2,24 @@ from __future__ import annotations
 
 from fnmatch import fnmatch
 import json
+import os
 from pathlib import Path
 import subprocess
-from typing import Any
+from typing import Any, Iterable
 
 from .health import cyclomatic_findings
 from .memory import load_architectural_memory
-from .models import Snapshot
+from .models import FileMetric, Snapshot
 from .python_analyzer import analyze_python
+from .tree_sitter_analyzer import SUPPORTED_SUFFIXES, analyze_tree_sitter
 
 
 DEFAULT_EXCLUDE = {
     ".git", ".venv", "venv", "node_modules", "dist", "build",
     ".build", ".spec", "coverage", "__pycache__", ".pytest_cache",
-    ".mypy_cache", ".tox",
+    ".mypy_cache", ".tox", ".dart_tool", ".next", ".nuxt",
+    ".parcel-cache", ".prerender", ".svelte-kit", ".turbo", "generated",
+    "out", "target",
 }
 
 
@@ -69,6 +73,63 @@ def _is_excluded(
     )
 
 
+def _is_directory_exclusion(value: str) -> bool:
+    return "/" not in value and "*" not in value
+
+
+def _exclusion_rules(
+    config: dict[str, Any],
+    exclude_patterns: list[str] | set[str] | None,
+) -> tuple[set[str], set[str]]:
+    configured = {str(value) for value in config.get("exclude") or []}
+    directory_names = DEFAULT_EXCLUDE | set(filter(
+        _is_directory_exclusion,
+        configured,
+    ))
+    patterns = configured - directory_names
+    patterns.update(str(value) for value in exclude_patterns or [])
+    return directory_names, patterns
+
+
+def _source_files(
+    root: Path,
+    *,
+    directory_exclusions: set[str],
+    pattern_exclusions: set[str],
+    workspace_path: str | None,
+) -> Iterable[Path]:
+    supported_suffixes = SUPPORTED_SUFFIXES | {".py"}
+    for directory, directory_names, file_names in os.walk(root):
+        current = Path(directory)
+        relative_directory = current.relative_to(root)
+        directory_names[:] = sorted(
+            name for name in directory_names
+            if not _is_excluded(
+                relative_directory / name,
+                directory_names=directory_exclusions,
+                patterns=pattern_exclusions,
+                workspace_path=workspace_path,
+            )
+        )
+        for name in sorted(file_names):
+            path = current / name
+            if path.suffix.lower() not in supported_suffixes:
+                continue
+            relative = path.relative_to(root)
+            if not _is_excluded(
+                relative,
+                directory_names=directory_exclusions,
+                patterns=pattern_exclusions,
+                workspace_path=workspace_path,
+            ):
+                yield path
+
+
+def _analyze_source(path: Path, root: Path) -> FileMetric:
+    analyzer = analyze_python if path.suffix.lower() == ".py" else analyze_tree_sitter
+    return analyzer(path, relative_path=path.relative_to(root).as_posix())
+
+
 def scan_repository(
     root: str | Path,
     *,
@@ -78,24 +139,18 @@ def scan_repository(
 ) -> Snapshot:
     repository_root = Path(root).resolve()
     config = _config(repository_root)
-    configured_exclude = {str(value) for value in config.get("exclude") or []}
-    exclude_names = DEFAULT_EXCLUDE | {
-        value for value in configured_exclude if "/" not in value and "*" not in value
-    }
-    patterns = {
-        value for value in configured_exclude if value not in exclude_names
-    } | {str(value) for value in exclude_patterns or []}
-    files = []
-    for path in sorted(repository_root.rglob("*.py")):
-        relative = path.relative_to(repository_root)
-        if _is_excluded(
-            relative,
-            directory_names=exclude_names,
-            patterns=patterns,
+    directory_exclusions, pattern_exclusions = _exclusion_rules(
+        config, exclude_patterns
+    )
+    files = sorted((
+        _analyze_source(path, repository_root)
+        for path in _source_files(
+            repository_root,
+            directory_exclusions=directory_exclusions,
+            pattern_exclusions=pattern_exclusions,
             workspace_path=workspace_path,
-        ):
-            continue
-        files.append(analyze_python(path, relative_path=relative.as_posix()))
+        )
+    ), key=lambda row: row.path)
     threshold = max(2, int(config.get("cyclomatic_threshold") or 15))
     findings = cyclomatic_findings(files, threshold=threshold)
     return Snapshot(

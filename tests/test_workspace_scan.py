@@ -42,6 +42,9 @@ def _workspace(tmp_path: Path) -> Path:
     frontend = tmp_path / "frontend"
     frontend.mkdir()
     (frontend / "index.ts").write_text("export const ok = true\n")
+    generated_frontend = frontend / ".next"
+    generated_frontend.mkdir()
+    (generated_frontend / "bundle.js").write_text("function bundled() {}\n")
 
     architecture = tmp_path / "architecture"
     architecture.mkdir()
@@ -101,13 +104,15 @@ def test_workspace_scan_uses_inventory_exclusions_memory_and_unique_ids(tmp_path
 
     assert payload["summary"] == {
         "repositories": 2,
-        "files": 1,
+        "files": 2,
         "functions": 3,
         "findings": 2,
         "architectural_memory_entries": 1,
         "registered_invariants": 1,
     }
-    assert [row["path"] for row in payload["files"]] == ["service/service.py"]
+    assert [row["path"] for row in payload["files"]] == [
+        "service/service.py", "frontend/index.ts",
+    ]
     assert len({row["id"] for row in payload["findings"]}) == 2
     assert len({row["local_id"] for row in payload["findings"]}) == 2
     assert {row["factors"]["definition_occurrence"] for row in payload["findings"]} == {1, 2}

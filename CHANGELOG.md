@@ -1,5 +1,14 @@
 # Changelog
 
+## Unreleased
+
+- Added parser-backed complexity scans for JavaScript, JSX, TypeScript, TSX,
+  Dart, Terraform/HCL, and shell source files.
+- Added language-aware callable, script, and infrastructure-block scopes with
+  exact branch evidence.
+- Changed repository traversal to prune excluded directories consistently for
+  every supported language.
+
 ## 0.2.0
 
 - Added canonical multi-repository workspace scans.
