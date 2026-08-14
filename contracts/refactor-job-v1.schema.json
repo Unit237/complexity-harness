@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightreach.io/contracts/refactor-job-v1.schema.json",
+  "title": "Bounded refactor job v1",
+  "type": "object",
+  "required": ["schema_version", "finding_id", "objective", "scope", "verification", "policy"],
+  "properties": {
+    "schema_version": {"const": "refactor-job-v1"},
+    "finding_id": {"type": "string"},
+    "executor": {"type": ["string", "null"]},
+    "objective": {"type": "string"},
+    "scope": {"type": "object"},
+    "verification": {"type": "object"},
+    "policy": {"type": "object"}
+  }
+}

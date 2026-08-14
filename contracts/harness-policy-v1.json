@@ -1,0 +1,47 @@
+{
+  "schema_version": "complexity-harness-policy-v1",
+  "measurements": {
+    "cyclomatic": {
+      "meaning": "local-control-flow-path-count",
+      "may_imply": ["investigation-candidate"],
+      "must_not_imply": [
+        "universal-maintainability-score",
+        "architectural-defect",
+        "automatic-refactor-authorization"
+      ],
+      "required_evidence": ["path", "symbol", "branch-kind", "branch-line"]
+    }
+  },
+  "architectural_memory": {
+    "role": "durable-semantic-context",
+    "required_fields": [
+      "id",
+      "concept",
+      "status",
+      "summary",
+      "evidence",
+      "decision",
+      "next_trigger"
+    ],
+    "separate_from_numeric_findings": true
+  },
+  "refactor_jobs": {
+    "executor_neutral": true,
+    "required_scope_controls": {
+      "max_changed_files": 5,
+      "scope_expansion": "stop-and-request-review"
+    },
+    "required_verification": {
+      "before_after_snapshot": true,
+      "behavior_characterization_required": true
+    },
+    "required_policy": {
+      "approval": "human-required",
+      "output": "draft-change-or-draft-pr",
+      "automatic_merge": false,
+      "production_deploy": false,
+      "secrets_access": false,
+      "destructive_migrations": false
+    }
+  }
+}

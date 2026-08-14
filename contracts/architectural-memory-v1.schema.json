@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightreach.io/contracts/architectural-memory-v1.schema.json",
+  "title": "Architectural memory v1",
+  "type": "object",
+  "required": ["schema_version", "entries"],
+  "properties": {
+    "schema_version": {"const": "architectural-memory-v1"},
+    "entries": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "concept", "status", "summary", "evidence", "decision", "next_trigger"]
+      }
+    }
+  }
+}

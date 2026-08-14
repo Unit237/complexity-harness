@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightreach.io/contracts/complexity-snapshot-v1.schema.json",
+  "title": "Complexity snapshot v1",
+  "type": "object",
+  "required": ["schema_version", "repository", "files", "findings", "architectural_memory"],
+  "properties": {
+    "schema_version": {"const": "complexity-snapshot-v1"},
+    "repository": {
+      "type": "object",
+      "required": ["name", "root"],
+      "properties": {
+        "name": {"type": "string"},
+        "root": {"type": "string"},
+        "commit": {"type": ["string", "null"]}
+      }
+    },
+    "files": {"type": "array"},
+    "findings": {"type": "array"},
+    "architectural_memory": {"type": "array"}
+  }
+}

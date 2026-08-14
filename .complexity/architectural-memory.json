@@ -1,0 +1,23 @@
+{
+  "schema_version": "architectural-memory-v1",
+  "entries": [
+    {
+      "id": "MEM-CYCLOMATIC-IS-LOCAL-EVIDENCE-001",
+      "concept": "complexity-signal-separation",
+      "status": "accepted-distinction",
+      "summary": "Cyclomatic complexity measures paths through local control flow; it does not reveal duplicated authorization, lifecycle, or cross-repository meaning by itself.",
+      "evidence": [
+        {
+          "path": "src/complexity_harness/python_analyzer.py",
+          "note": "The analyzer emits function and branch-line evidence only."
+        },
+        {
+          "path": "src/complexity_harness/refactor.py",
+          "note": "Refactor jobs carry related architectural-memory IDs separately from the numeric finding."
+        }
+      ],
+      "decision": "Use cyclomatic findings to locate investigation candidates, then consult architectural memory and verification before authorizing a refactor.",
+      "next_trigger": "Any new aggregate score must expose its factors and prove that it improves refactor selection on gold fixtures."
+    }
+  ]
+}
