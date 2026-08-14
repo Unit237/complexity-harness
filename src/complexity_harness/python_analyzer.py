@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import ast
+from collections import Counter
 import hashlib
 from pathlib import Path
 
@@ -10,10 +11,12 @@ from .models import BranchEvidence, FileMetric, FunctionMetric
 class _BranchVisitor(ast.NodeVisitor):
     def __init__(self) -> None:
         self.branches: list[BranchEvidence] = []
+        self._fallback_line = 0
 
     def _add(self, node: ast.AST, kind: str, contribution: int = 1) -> None:
         if contribution > 0:
-            self.branches.append(BranchEvidence(kind, int(getattr(node, "lineno", 0)), contribution))
+            line = int(getattr(node, "lineno", 0) or self._fallback_line)
+            self.branches.append(BranchEvidence(kind, line, contribution))
 
     def visit_If(self, node: ast.If) -> None:
         self._add(node, "if")
@@ -51,6 +54,17 @@ class _BranchVisitor(ast.NodeVisitor):
             self._add(condition, "comprehension-filter")
         self.generic_visit(node)
 
+    def _visit_comprehension_expression(self, node: ast.AST) -> None:
+        previous = self._fallback_line
+        self._fallback_line = int(getattr(node, "lineno", 0) or previous)
+        self.generic_visit(node)
+        self._fallback_line = previous
+
+    visit_ListComp = _visit_comprehension_expression
+    visit_SetComp = _visit_comprehension_expression
+    visit_DictComp = _visit_comprehension_expression
+    visit_GeneratorExp = _visit_comprehension_expression
+
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         return
 
@@ -62,6 +76,7 @@ class _FunctionCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.scope: list[str] = []
         self.metrics: list[FunctionMetric] = []
+        self.occurrences: Counter[str] = Counter()
 
     def visit_ClassDef(self, node: ast.ClassDef) -> None:
         self.scope.append(node.name)
@@ -70,11 +85,13 @@ class _FunctionCollector(ast.NodeVisitor):
 
     def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
         symbol = ".".join([*self.scope, node.name])
+        self.occurrences[symbol] += 1
         visitor = _BranchVisitor()
         for statement in node.body:
             visitor.visit(statement)
         self.metrics.append(FunctionMetric(
             symbol=symbol,
+            occurrence=self.occurrences[symbol],
             line=node.lineno,
             end_line=int(getattr(node, "end_lineno", node.lineno)),
             cyclomatic=1 + sum(row.contribution for row in visitor.branches),

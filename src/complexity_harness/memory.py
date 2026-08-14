@@ -8,8 +8,12 @@ from typing import Any
 REQUIRED = {"id", "concept", "status", "summary", "evidence", "decision", "next_trigger"}
 
 
-def load_architectural_memory(root: Path) -> list[dict[str, Any]]:
-    path = root / ".complexity" / "architectural-memory.json"
+def load_architectural_memory(
+    root: Path,
+    *,
+    path: str | Path | None = None,
+) -> list[dict[str, Any]]:
+    path = Path(path).resolve() if path else root / ".complexity" / "architectural-memory.json"
     if not path.is_file():
         return []
     payload = json.loads(path.read_text(encoding="utf-8"))
@@ -27,6 +31,15 @@ def load_architectural_memory(root: Path) -> list[dict[str, Any]]:
             raise ValueError(f"{path}: duplicate memory id {entry['id']}")
         seen.add(entry["id"])
     return entries
+
+
+def memory_for_repository(
+    entries: list[dict[str, Any]],
+    repository_path: str,
+) -> list[dict[str, Any]]:
+    """Return entries with evidence inside a canonical repository path."""
+    normalized = Path(repository_path).as_posix().strip("/")
+    return memory_for_paths(entries, [normalized])
 
 
 def _paths_overlap(changed: str, evidence: str) -> bool:

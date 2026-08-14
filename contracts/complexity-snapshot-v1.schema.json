@@ -3,7 +3,7 @@
   "$id": "https://lightreach.io/contracts/complexity-snapshot-v1.schema.json",
   "title": "Complexity snapshot v1",
   "type": "object",
-  "required": ["schema_version", "repository", "files", "findings", "architectural_memory"],
+  "required": ["schema_version", "repository", "summary", "files", "findings", "architectural_memory"],
   "properties": {
     "schema_version": {"const": "complexity-snapshot-v1"},
     "repository": {
@@ -14,6 +14,10 @@
         "root": {"type": "string"},
         "commit": {"type": ["string", "null"]}
       }
+    },
+    "summary": {
+      "type": "object",
+      "required": ["files", "functions", "findings", "architectural_memory_entries"]
     },
     "files": {"type": "array"},
     "findings": {"type": "array"},

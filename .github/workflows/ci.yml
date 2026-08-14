@@ -2,6 +2,7 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
@@ -10,12 +11,31 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
-      - run: python -m pip install -e . pytest
-      - run: python -m pytest
-      - run: complexity-harness scan . --output /tmp/complexity-snapshot.json
-      - run: complexity-harness validate /tmp/complexity-snapshot.json
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install development dependencies
+        run: python -m pip install -e ".[dev]"
+
+      - name: Run tests
+        run: python -m pytest -q
+
+      - name: Dogfood repository scan
+        run: |
+          complexity-harness scan . --output /tmp/complexity-harness.json
+          complexity-harness validate /tmp/complexity-harness.json
+          complexity-harness report /tmp/complexity-harness.json --top 10 --output /tmp/complexity-report.md
+
+      - name: Build distributions
+        if: matrix.python-version == '3.11'
+        run: python -m build

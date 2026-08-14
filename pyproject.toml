@@ -1,23 +1,36 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
 name = "complexity-harness"
-version = "0.1.0"
-description = "Evidence-backed software complexity snapshots and bounded refactor jobs"
+version = "0.2.0"
+description = "Inventory-aware complexity snapshots, architectural memory, and bounded refactor jobs"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "MIT" }
+license = "MIT"
 authors = [{ name = "Light Reach" }]
 classifiers = [
   "Development Status :: 3 - Alpha",
-  "License :: OSI Approved :: MIT License",
   "Programming Language :: Python :: 3",
   "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
   "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = []
+
+[project.optional-dependencies]
+dev = [
+  "build>=1.2",
+  "jsonschema>=4.23",
+  "pytest>=8",
+]
+
+[project.urls]
+Homepage = "https://github.com/Unit237/complexity-harness"
+Repository = "https://github.com/Unit237/complexity-harness"
+Issues = "https://github.com/Unit237/complexity-harness/issues"
 
 [project.scripts]
 complexity-harness = "complexity_harness.cli:main"

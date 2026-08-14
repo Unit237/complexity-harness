@@ -12,7 +12,10 @@ def cyclomatic_findings(files: list[FileMetric], *, threshold: int) -> list[Find
             if function.cyclomatic < threshold:
                 continue
             finding_id = "CYC-" + hashlib.sha256(
-                f"{file.path}:{function.symbol}:cyclomatic-v1".encode()
+                (
+                    f"{file.path}:{function.symbol}:"
+                    f"{function.occurrence}:cyclomatic-v2"
+                ).encode()
             ).hexdigest()[:12].upper()
             severity = "high" if function.cyclomatic >= max(25, threshold * 2) else "medium"
             findings.append(Finding(
@@ -29,6 +32,9 @@ def cyclomatic_findings(files: list[FileMetric], *, threshold: int) -> list[Find
                     "cyclomatic": function.cyclomatic,
                     "threshold": threshold,
                     "excess": function.cyclomatic - threshold,
+                    "definition_occurrence": function.occurrence,
+                    "start_line": function.line,
+                    "end_line": function.end_line,
                 },
                 evidence=tuple({
                     "kind": branch.kind,

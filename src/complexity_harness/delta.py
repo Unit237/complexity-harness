@@ -12,6 +12,21 @@ def diff_snapshots(before: dict[str, Any], after: dict[str, Any]) -> dict[str, A
     )
     before_findings = {row["id"]: row for row in before["findings"]}
     after_findings = {row["id"]: row for row in after["findings"]}
+    changed_findings = []
+    for key in sorted(before_findings.keys() & after_findings.keys()):
+        old = before_findings[key]
+        new = after_findings[key]
+        old_value = int(old.get("factors", {}).get("cyclomatic", 0))
+        new_value = int(new.get("factors", {}).get("cyclomatic", 0))
+        if old_value != new_value:
+            changed_findings.append({
+                "id": key,
+                "path": new.get("path"),
+                "symbol": new.get("symbol"),
+                "before": old_value,
+                "after": new_value,
+                "delta": new_value - old_value,
+            })
     return {
         "schema_version": "complexity-delta-v1",
         "files": {
@@ -22,5 +37,6 @@ def diff_snapshots(before: dict[str, Any], after: dict[str, Any]) -> dict[str, A
         "findings": {
             "introduced": [after_findings[key] for key in sorted(after_findings.keys() - before_findings.keys())],
             "resolved": [before_findings[key] for key in sorted(before_findings.keys() - after_findings.keys())],
+            "changed": changed_findings,
         },
     }

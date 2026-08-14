@@ -14,6 +14,7 @@ class BranchEvidence:
 @dataclass(frozen=True)
 class FunctionMetric:
     symbol: str
+    occurrence: int
     line: int
     end_line: int
     cyclomatic: int

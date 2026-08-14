@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightreach.io/contracts/repository-inventory-v1.schema.json",
+  "title": "Canonical repository inventory v1",
+  "type": "object",
+  "required": ["schema_version", "repositories"],
+  "properties": {
+    "schema_version": {"const": "software-repositories-v1"},
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "path", "status"],
+        "properties": {
+          "id": {"type": "string", "minLength": 1},
+          "name": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1},
+          "status": {"type": "string"}
+        }
+      }
+    },
+    "aliases": {"type": "array"},
+    "excluded_paths": {"type": "array", "items": {"type": "string"}}
+  }
+}

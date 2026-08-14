@@ -25,6 +25,12 @@
     ],
     "separate_from_numeric_findings": true
   },
+  "workspace_scans": {
+    "canonical_inventory_required": true,
+    "exclude_aliases_and_generated_paths": true,
+    "preserve_repository_identity": true,
+    "aggregate_only_after_repository_scans": true
+  },
   "refactor_jobs": {
     "executor_neutral": true,
     "required_scope_controls": {
@@ -35,6 +41,15 @@
       "before_after_snapshot": true,
       "behavior_characterization_required": true
     },
+    "missing_verification_behavior": "block-execution",
+    "required_agent_steps": [
+      "read-agent-instructions-and-architectural-memory",
+      "characterize-behavior-before-editing",
+      "inspect-analogous-hotspots-and-invariants",
+      "remain-inside-explicit-path-scope",
+      "run-required-checks-and-after-snapshot",
+      "return-draft-only"
+    ],
     "required_policy": {
       "approval": "human-required",
       "output": "draft-change-or-draft-pr",

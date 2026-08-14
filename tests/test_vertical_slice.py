@@ -64,3 +64,29 @@ def test_snapshot_diff_is_evidence_based():
     assert delta["files"] == {"added": ["b.py"], "removed": [], "changed": ["a.py"]}
     assert delta["findings"]["introduced"] == [{"id": "new"}]
     assert delta["findings"]["resolved"] == [{"id": "old"}]
+    assert delta["findings"]["changed"] == []
+
+
+def test_snapshot_diff_reports_changed_complexity():
+    finding = {
+        "id": "same",
+        "path": "a.py",
+        "symbol": "choose",
+        "factors": {"cyclomatic": 12},
+    }
+    before = {"files": [], "findings": [finding]}
+    after = {
+        "files": [],
+        "findings": [{**finding, "factors": {"cyclomatic": 7}}],
+    }
+
+    delta = diff_snapshots(before, after)
+
+    assert delta["findings"]["changed"] == [{
+        "id": "same",
+        "path": "a.py",
+        "symbol": "choose",
+        "before": 12,
+        "after": 7,
+        "delta": -5,
+    }]

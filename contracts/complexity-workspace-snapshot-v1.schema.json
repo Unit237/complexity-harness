@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://lightreach.io/contracts/complexity-workspace-snapshot-v1.schema.json",
+  "title": "Complexity workspace snapshot v1",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "workspace",
+    "summary",
+    "repositories",
+    "files",
+    "findings",
+    "architectural_memory",
+    "invariants"
+  ],
+  "properties": {
+    "schema_version": {"const": "complexity-workspace-snapshot-v1"},
+    "workspace": {
+      "type": "object",
+      "required": ["name", "root", "inventory", "excluded_paths", "aliases"]
+    },
+    "summary": {
+      "type": "object",
+      "required": ["repositories", "files", "functions", "findings", "architectural_memory_entries", "registered_invariants"]
+    },
+    "repositories": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name", "path", "configuration", "summary"]
+      }
+    },
+    "files": {"type": "array"},
+    "findings": {"type": "array"},
+    "architectural_memory": {"type": "array"},
+    "invariants": {"type": "array"}
+  }
+}
