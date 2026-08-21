@@ -37,7 +37,9 @@ def _commit(root: Path) -> str | None:
 
 
 def _matches_pattern(path: str, pattern: str) -> bool:
-    normalized = pattern.replace("\\", "/").lstrip("./")
+    normalized = pattern.replace("\\", "/")
+    while normalized.startswith("./"):
+        normalized = normalized[2:]
     if not normalized:
         return False
     if normalized.endswith("/**"):
