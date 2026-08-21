@@ -38,6 +38,9 @@ def _workspace(tmp_path: Path) -> Path:
     generated = service / ".build"
     generated.mkdir()
     (generated / "copied.py").write_text("def copied():\n    return True\n")
+    worktree = service / ".codex-worktrees" / "branch"
+    worktree.mkdir(parents=True)
+    (worktree / "copied.py").write_text("def copied():\n    return True\n")
 
     frontend = tmp_path / "frontend"
     frontend.mkdir()
@@ -52,7 +55,7 @@ def _workspace(tmp_path: Path) -> Path:
             {"id": "frontend", "name": "Frontend", "path": "frontend", "status": "canonical", "kind": "website"},
         ],
         "aliases": [{"path": "service-copy", "canonical_repository_id": "service"}],
-        "excluded_paths": ["service/.build/**"],
+        "excluded_paths": ["service/.build/**", ".codex-worktrees/**"],
     }))
     (architecture / "architectural-memory.json").write_text(json.dumps({
         "schema_version": "architectural-memory-v1",
