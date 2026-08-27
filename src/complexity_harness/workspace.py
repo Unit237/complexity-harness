@@ -55,14 +55,10 @@ def _workspace_finding_id(repository_id: str, local_id: str) -> str:
     return f"CYC-{digest}"
 
 
-def scan_workspace(
-    root: str | Path,
-    *,
-    inventory_path: str | Path | None = None,
-    architectural_memory_path: str | Path | None = None,
-    invariants_path: str | Path | None = None,
-) -> dict[str, Any]:
-    workspace_root = Path(root).resolve()
+def _load_inventory(
+    workspace_root: Path,
+    inventory_path: str | Path | None,
+) -> tuple[Path, dict[str, Any], list[Any]]:
     inventory_file = (
         Path(inventory_path).resolve()
         if inventory_path
@@ -72,7 +68,15 @@ def scan_workspace(
     repositories = inventory.get("repositories")
     if not isinstance(repositories, list):
         raise ValueError(f"{inventory_file}: repositories must be a list")
+    return inventory_file, inventory, repositories
 
+
+def _load_workspace_architecture(
+    workspace_root: Path,
+    *,
+    architectural_memory_path: str | Path | None,
+    invariants_path: str | Path | None,
+) -> tuple[Path | None, list[dict[str, Any]], Path | None, list[dict[str, Any]]]:
     memory_file = (
         Path(architectural_memory_path).resolve()
         if architectural_memory_path
@@ -88,71 +92,144 @@ def scan_workspace(
         if invariants_path
         else _default_invariants(workspace_root)
     )
-    invariants = load_invariants(invariants_file)
+    return (
+        memory_file,
+        architectural_memory,
+        invariants_file,
+        load_invariants(invariants_file),
+    )
+
+
+def _canonical_repositories(repositories: list[Any]) -> list[dict[str, Any]]:
+    return [
+        row
+        for row in repositories
+        if isinstance(row, dict) and row.get("status", "canonical") == "canonical"
+    ]
+
+
+def _repository_location(
+    workspace_root: Path,
+    definition: dict[str, Any],
+    *,
+    seen_ids: set[str],
+    seen_paths: set[str],
+) -> tuple[str, str, Path]:
+    repository_id = str(definition.get("id") or "").strip()
+    repository_path = Path(str(definition.get("path") or "")).as_posix().strip("/")
+    if not repository_id or not repository_path:
+        raise ValueError("every canonical repository needs an id and path")
+    if repository_id in seen_ids:
+        raise ValueError(f"duplicate repository id: {repository_id}")
+    if repository_path in seen_paths:
+        raise ValueError(f"duplicate canonical repository path: {repository_path}")
+    seen_ids.add(repository_id)
+    seen_paths.add(repository_path)
+
+    repository_root = (workspace_root / repository_path).resolve()
+    if not _within(workspace_root, repository_root):
+        raise ValueError(f"repository escapes workspace root: {repository_path}")
+    if not repository_root.is_dir():
+        raise ValueError(f"canonical repository is missing: {repository_path}")
+    return repository_id, repository_path, repository_root
+
+
+def _scan_workspace_repository(
+    workspace_root: Path,
+    definition: dict[str, Any],
+    *,
+    seen_ids: set[str],
+    seen_paths: set[str],
+    exclude_patterns: list[str],
+    architectural_memory: list[dict[str, Any]],
+    invariants: list[dict[str, Any]],
+) -> tuple[dict[str, Any], list[dict[str, Any]], list[dict[str, Any]]]:
+    repository_id, repository_path, repository_root = _repository_location(
+        workspace_root,
+        definition,
+        seen_ids=seen_ids,
+        seen_paths=seen_paths,
+    )
+    snapshot = scan_repository(
+        repository_root,
+        exclude_patterns=exclude_patterns,
+        workspace_path=repository_path,
+    ).as_dict()
+    scoped_memory = memory_for_repository(architectural_memory, repository_path)
+    scoped_invariants = invariants_for_repository(invariants, repository_path)
+    repository_summary = dict(snapshot["summary"])
+    repository_summary["architectural_memory_entries"] = len(scoped_memory)
+    repository_summary["registered_invariants"] = len(scoped_invariants)
+    repository_row = {
+        "id": repository_id,
+        "name": str(definition.get("name") or repository_id),
+        "path": repository_path,
+        "kind": definition.get("kind"),
+        "remote": definition.get("remote"),
+        "commit": snapshot["repository"].get("commit"),
+        "configuration": snapshot["repository"].get("configuration", {}),
+        "summary": repository_summary,
+    }
+    file_rows = [
+        {
+            **row,
+            "repository_id": repository_id,
+            "path": f"{repository_path}/{row['path']}",
+        }
+        for row in snapshot["files"]
+    ]
+    finding_rows = [
+        {
+            **row,
+            "id": _workspace_finding_id(repository_id, row["id"]),
+            "local_id": row["id"],
+            "repository_id": repository_id,
+            "path": f"{repository_path}/{row['path']}",
+        }
+        for row in snapshot["findings"]
+    ]
+    return repository_row, file_rows, finding_rows
+
+
+def scan_workspace(
+    root: str | Path,
+    *,
+    inventory_path: str | Path | None = None,
+    architectural_memory_path: str | Path | None = None,
+    invariants_path: str | Path | None = None,
+) -> dict[str, Any]:
+    workspace_root = Path(root).resolve()
+    inventory_file, inventory, repositories = _load_inventory(
+        workspace_root,
+        inventory_path,
+    )
+    memory_file, architectural_memory, invariants_file, invariants = (
+        _load_workspace_architecture(
+            workspace_root,
+            architectural_memory_path=architectural_memory_path,
+            invariants_path=invariants_path,
+        )
+    )
     exclude_patterns = [str(value) for value in inventory.get("excluded_paths") or []]
     repository_rows: list[dict[str, Any]] = []
     files: list[dict[str, Any]] = []
     findings: list[dict[str, Any]] = []
 
-    canonical = [
-        row for row in repositories
-        if isinstance(row, dict) and row.get("status", "canonical") == "canonical"
-    ]
     seen_ids: set[str] = set()
     seen_paths: set[str] = set()
-    for definition in canonical:
-        repository_id = str(definition.get("id") or "").strip()
-        repository_path = Path(str(definition.get("path") or "")).as_posix().strip("/")
-        if not repository_id or not repository_path:
-            raise ValueError("every canonical repository needs an id and path")
-        if repository_id in seen_ids:
-            raise ValueError(f"duplicate repository id: {repository_id}")
-        if repository_path in seen_paths:
-            raise ValueError(f"duplicate canonical repository path: {repository_path}")
-        seen_ids.add(repository_id)
-        seen_paths.add(repository_path)
-
-        repository_root = (workspace_root / repository_path).resolve()
-        if not _within(workspace_root, repository_root):
-            raise ValueError(f"repository escapes workspace root: {repository_path}")
-        if not repository_root.is_dir():
-            raise ValueError(f"canonical repository is missing: {repository_path}")
-
-        snapshot = scan_repository(
-            repository_root,
+    for definition in _canonical_repositories(repositories):
+        repository_row, file_rows, finding_rows = _scan_workspace_repository(
+            workspace_root,
+            definition,
+            seen_ids=seen_ids,
+            seen_paths=seen_paths,
             exclude_patterns=exclude_patterns,
-            workspace_path=repository_path,
-        ).as_dict()
-        scoped_memory = memory_for_repository(architectural_memory, repository_path)
-        scoped_invariants = invariants_for_repository(invariants, repository_path)
-        repository_summary = dict(snapshot["summary"])
-        repository_summary["architectural_memory_entries"] = len(scoped_memory)
-        repository_summary["registered_invariants"] = len(scoped_invariants)
-        repository_rows.append({
-            "id": repository_id,
-            "name": str(definition.get("name") or repository_id),
-            "path": repository_path,
-            "kind": definition.get("kind"),
-            "remote": definition.get("remote"),
-            "commit": snapshot["repository"].get("commit"),
-            "configuration": snapshot["repository"].get("configuration", {}),
-            "summary": repository_summary,
-        })
-        for row in snapshot["files"]:
-            files.append({
-                **row,
-                "repository_id": repository_id,
-                "path": f"{repository_path}/{row['path']}",
-            })
-        for row in snapshot["findings"]:
-            local_id = row["id"]
-            findings.append({
-                **row,
-                "id": _workspace_finding_id(repository_id, local_id),
-                "local_id": local_id,
-                "repository_id": repository_id,
-                "path": f"{repository_path}/{row['path']}",
-            })
+            architectural_memory=architectural_memory,
+            invariants=invariants,
+        )
+        repository_rows.append(repository_row)
+        files.extend(file_rows)
+        findings.extend(finding_rows)
 
     findings.sort(
         key=lambda row: (

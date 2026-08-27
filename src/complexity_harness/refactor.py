@@ -17,22 +17,20 @@ def _normalize_scope_path(value: str) -> str:
     return path.as_posix()
 
 
-def build_refactor_job(
-    snapshot: dict[str, Any],
-    finding_id: str,
-    *,
-    executor: str | None = None,
-    allowed_paths: list[str] | None = None,
-    required_checks: list[str] | None = None,
-) -> dict[str, Any]:
-    finding = next((row for row in snapshot["findings"] if row["id"] == finding_id), None)
+def _require_finding(snapshot: dict[str, Any], finding_id: str) -> dict[str, Any]:
+    finding = next(
+        (row for row in snapshot["findings"] if row["id"] == finding_id),
+        None,
+    )
     if finding is None:
         raise ValueError(f"unknown finding: {finding_id}")
-    related_memory = memory_for_paths(snapshot["architectural_memory"], [finding["path"]])
-    related_invariants = invariants_for_paths(
-        snapshot.get("invariants") or [],
-        [finding["path"]],
-    )
+    return finding
+
+
+def _job_source(
+    snapshot: dict[str, Any],
+    finding: dict[str, Any],
+) -> tuple[dict[str, Any], dict[str, Any]]:
     if snapshot.get("schema_version") == "complexity-workspace-snapshot-v1":
         repository = next(
             (
@@ -50,25 +48,52 @@ def build_refactor_job(
             "repository_path": repository["path"],
             "commit": repository.get("commit"),
         }
-    else:
-        repository = snapshot["repository"]
-        source = {
-            "snapshot_schema": snapshot.get("schema_version", "complexity-snapshot-v1"),
-            "repository": repository.get("name"),
-            "repository_path": ".",
-            "commit": repository.get("commit"),
-        }
-    checks = list(
+        return repository, source
+
+    repository = snapshot["repository"]
+    source = {
+        "snapshot_schema": snapshot.get("schema_version", "complexity-snapshot-v1"),
+        "repository": repository.get("name"),
+        "repository_path": ".",
+        "commit": repository.get("commit"),
+    }
+    return repository, source
+
+
+def _required_checks(
+    repository: dict[str, Any],
+    required_checks: list[str] | None,
+) -> list[str]:
+    return list(
         required_checks
         if required_checks is not None
         else repository.get("configuration", {}).get("required_checks") or []
     )
+
+
+def _scope_paths(
+    finding: dict[str, Any],
+    allowed_paths: list[str] | None,
+) -> list[str]:
     paths = list(dict.fromkeys(
         _normalize_scope_path(value)
         for value in [finding["path"], *(allowed_paths or [])]
     ))
+    if len(paths) > 5:
+        raise ValueError("refactor jobs allow at most five explicit paths")
+    return paths
+
+
+def _validate_workspace_scope(
+    snapshot: dict[str, Any],
+    source: dict[str, Any],
+    paths: list[str],
+) -> None:
     repository_prefix = str(source["repository_path"]).strip("/")
-    if snapshot.get("schema_version") == "complexity-workspace-snapshot-v1" and repository_prefix != ".":
+    if (
+        snapshot.get("schema_version") == "complexity-workspace-snapshot-v1"
+        and repository_prefix != "."
+    ):
         outside_repository = [
             path for path in paths
             if not path.startswith(repository_prefix + "/")
@@ -78,11 +103,37 @@ def build_refactor_job(
                 "workspace refactor jobs cannot cross canonical repositories: "
                 + ", ".join(outside_repository)
             )
-    if len(paths) > 5:
-        raise ValueError("refactor jobs allow at most five explicit paths")
+
+
+def _readiness(checks: list[str]) -> dict[str, Any]:
     blockers = [] if checks else [
         "No required verification command is registered. Add --check before execution."
     ]
+    return {
+        "status": "ready" if not blockers else "blocked",
+        "blockers": blockers,
+    }
+
+
+def build_refactor_job(
+    snapshot: dict[str, Any],
+    finding_id: str,
+    *,
+    executor: str | None = None,
+    allowed_paths: list[str] | None = None,
+    required_checks: list[str] | None = None,
+) -> dict[str, Any]:
+    finding = _require_finding(snapshot, finding_id)
+    related_memory = memory_for_paths(snapshot["architectural_memory"], [finding["path"]])
+    related_invariants = invariants_for_paths(
+        snapshot.get("invariants") or [],
+        [finding["path"]],
+    )
+    repository, source = _job_source(snapshot, finding)
+    checks = _required_checks(repository, required_checks)
+    paths = _scope_paths(finding, allowed_paths)
+    _validate_workspace_scope(snapshot, source, paths)
+    readiness = _readiness(checks)
     instructions = [
         "Read repository agent instructions and the attached architectural memory before editing.",
         "Characterize the current behavior with tests before changing control flow.",
@@ -123,10 +174,7 @@ def build_refactor_job(
             "secrets_access": False,
             "destructive_migrations": False,
         },
-        "readiness": {
-            "status": "ready" if not blockers else "blocked",
-            "blockers": blockers,
-        },
+        "readiness": readiness,
         "agent_instructions": instructions,
         "stop_conditions": [
             "Required behavior cannot be characterized.",
