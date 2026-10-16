@@ -106,7 +106,10 @@ class _FunctionCollector(ast.NodeVisitor):
 
 
 def analyze_python(path: Path, *, relative_path: str) -> FileMetric:
-    data = path.read_bytes()
+    return analyze_python_bytes(path.read_bytes(), relative_path=relative_path)
+
+
+def analyze_python_bytes(data: bytes, *, relative_path: str) -> FileMetric:
     source = data.decode("utf-8")
     lines = len(source.splitlines())
     try:

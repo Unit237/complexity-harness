@@ -54,11 +54,13 @@ class Snapshot:
     findings: list[Finding]
     architectural_memory: list[dict[str, Any]] = field(default_factory=list)
     schema_version: str = "complexity-snapshot-v1"
+    coverage: dict[str, Any] = field(default_factory=dict)
 
     def as_dict(self) -> dict[str, Any]:
         return {
             "schema_version": self.schema_version,
             "repository": self.repository,
+            "coverage": self.coverage,
             "summary": {
                 "files": len(self.files),
                 "functions": sum(len(row.functions) for row in self.files),
