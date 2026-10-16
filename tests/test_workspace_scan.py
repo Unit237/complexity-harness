@@ -104,13 +104,14 @@ def test_workspace_scan_uses_inventory_exclusions_memory_and_unique_ids(tmp_path
 
     assert payload["summary"] == {
         "repositories": 2,
-        "files": 1,
-        "functions": 3,
+        "files": 3,
+        "functions": 4,
         "findings": 2,
         "architectural_memory_entries": 1,
         "registered_invariants": 1,
     }
-    assert [row["path"] for row in payload["files"]] == ["service/service.py"]
+    assert "service/service.py" in {row["path"] for row in payload["files"]}
+    assert not any("generated" in row["path"] for row in payload["files"])
     assert len({row["id"] for row in payload["findings"]}) == 2
     assert len({row["local_id"] for row in payload["findings"]}) == 2
     assert {row["factors"]["definition_occurrence"] for row in payload["findings"]} == {1, 2}
@@ -134,7 +135,7 @@ def test_workspace_scan_uses_inventory_exclusions_memory_and_unique_ids(tmp_path
 
     report = markdown_report(payload, top=1)
     assert "# Complexity report" in report
-    assert "| Service | 1 | 3 | 2 | 1 | 1 |" in report
+    assert "| Service | 2 | 4 | 2 | 1 | 1 |" in report
 
 
 def test_workspace_cli_report_and_agent_prompt(tmp_path, capsys):

@@ -38,13 +38,9 @@ def test_scan_health_memory_and_refactor_job_vertical_slice(tmp_path: Path):
 
     payload = scan_repository(tmp_path).as_dict()
     validate_snapshot(payload)
-    assert payload["summary"] == {
-        "files": 1,
-        "functions": 1,
-        "findings": 1,
-        "architectural_memory_entries": 1,
-    }
-    job = build_refactor_job(payload, payload["findings"][0]["id"], executor="compress-cloud")
+    assert payload["summary"]["architectural_memory_entries"] == 1
+    finding = next(row for row in payload["findings"] if row["path"]=="service.py")
+    job = build_refactor_job(payload, finding["id"], executor="compress-cloud")
     assert job["scope"]["allowed_paths"] == ["service.py"]
     assert job["architectural_memory_ids"] == ["MEM-TEST-001"]
     assert job["policy"]["automatic_merge"] is False

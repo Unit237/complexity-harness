@@ -6,7 +6,7 @@
 
 **Find complexity with evidence. Preserve architectural intent. Give coding agents bounded work.**
 
-Complexity Harness is a dependency-free Python CLI that combines exact
+Complexity Harness is a Python CLI with bundled, pinned syntax parsers that combines exact
 cyclomatic evidence, a canonical repository inventory, architectural memory,
 registered invariants, and approval-required refactor jobs.
 
@@ -25,7 +25,7 @@ keeps those signals separate and inspectable.
 
 ## What it does
 
-- Scans one Python repository with exact AST-based branch evidence.
+- Inventories any repository, with branch evidence for 17 programming-language adapters and structural evidence for 11 declarative formats.
 - Scans a multi-repository workspace from a canonical inventory.
 - Excludes aliases, duplicate checkouts, generated packages, and build outputs.
 - Gives duplicate symbols deterministic, collision-free finding IDs.
@@ -38,7 +38,7 @@ keeps those signals separate and inspectable.
 ```mermaid
 flowchart LR
     Inventory["Canonical repository inventory"] --> Scan["Repository scans"]
-    Code["Python source"] --> Scan
+    Code["Customer repository source"] --> Scan
     Memory["Architectural memory"] --> Snapshot["Workspace snapshot"]
     Invariants["Registered invariants"] --> Snapshot
     Scan --> Snapshot
@@ -91,89 +91,32 @@ Configuration is optional at `.complexity/config.json`:
 complexity-harness burden /tmp/before.json
 ```
 
-`complexity-burden-v1` maps measured Python function load onto 0–100; higher
-means more control-flow burden. It combines 60% mean load and 40% highest-decile
-load, where load is `min((cyclomatic - 1) / 24, 1)`. Fixed bands and an initial
-policy target of 35 are review conventions, not empirical defect probabilities.
-Across repositories the product index is the highest measured repository burden,
-so another repository's simple code cannot dilute an existing hotspot population.
-The source map computes each area independently using the same repository formula.
+`complexity-burden-v2` maps measured source burden onto 0–100; higher is
+worse. Programming-language adapters count control-flow decisions in functions,
+closures and module code. Declarative adapters count excess container nesting
+beyond three levels and fan-out beyond eight direct child containers (not flat scalar declarations). These are distinct
+metric families, not interchangeable cyclomatic claims. Each family uses the
+fixed mean/tail normalization; the highest family is the repository score and
+the highest repository is the product score. The contract documents the formula.
 
-A publishable snapshot requires a clean commit, a complete eligible file
-inventory, a versioned exclusion hash and reconstructable branch evidence.
-Unsupported source is explicitly unmeasured and fingerprinted, including symbolic
-links without reading their targets. This release measures Python, not JavaScript,
-TypeScript, Dart, coupling or semantic duplication. File coverage is not an
-estimate of behavioral coverage. Tests are included unless explicitly excluded.
+The scan inventories every Git-visible file, including `.mjs`, `.cc`, shell,
+Terraform, SQL, configuration and unknown customer extensions. Documentation,
+assets, generated/lock files and exclusions are counted separately. Unknown
+languages, unsupported dialects, parse errors, mixed embedded templates,
+symlinks and oversized files remain unmeasured with content fingerprints.
+Customer source is never executed. The broker uses bundled parsers offline and
+returns measurements, never source bodies. Python uses the stdlib AST; other
+adapters pin tree-sitter-language-pack 0.13.0 and tree-sitter 0.25.2. Available
+grammars are not automatically advertised as validated complexity adapters.
 
-A lower number is only a candidate reduction. `reduction_evidence` requires the
-same measurement policy, no parse errors, unchanged unsupported source, a new
-revision with changed measured source, and fewer decisions across the entire
-measured population. Splitting branches into helpers without removing decisions
-cannot earn credit. The v2 parser also audits recognized branches in lambdas,
-module code and other locations outside named functions, so relocating decisions
-there cannot manufacture a reduction. These outside-function decisions participate
-in the reduction audit; the fixed index still describes named-function burden. The consuming product additionally verifies approved diff
-scope, merged source, successful CI and registered durable behavior checks on
-that exact revision. Completion, an open PR or tests against a different SHA do
-not lower the accepted score. Missing evidence remains visibly pending.
+Completed Work cannot lower the accepted score by itself. A comparable scan
+must remove load without increasing any factor, changing language coverage or
+changing unknown/generated/excluded source. The product also requires approved
+source scope, merged delivery, passing CI, and durable behavior-test receipts on
+the exact measured revision. A parser/analysis upgrade creates a labeled new
+baseline, retains old receipts, and awards no reduction or Work credit.
 
-The pure `burden.py`, source policy and parser are generated byte-for-byte into
-Actionairy and its read-only Compress collector; the workspace architecture
-manifest owns synchronization. Consumers must not reinterpret the fixed index.
-
-### Scan a canonical workspace
-
-`workspace-scan` automatically looks for `.complexity/repositories.json` and
-then `architecture/repositories.json`:
-
-```bash
-complexity-harness workspace-scan . --output /tmp/workspace-before.json
-complexity-harness validate /tmp/workspace-before.json
-complexity-harness report /tmp/workspace-before.json \
-  --top 20 \
-  --output /tmp/workspace-report.md
-```
-
-A minimal inventory looks like this:
-
-```json
-{
-  "schema_version": "software-repositories-v1",
-  "repositories": [
-    {
-      "id": "api",
-      "name": "Product API",
-      "path": "services/api",
-      "kind": "product",
-      "status": "canonical"
-    }
-  ],
-  "aliases": [
-    {
-      "path": "api-second-checkout",
-      "canonical_repository_id": "api"
-    }
-  ],
-  "excluded_paths": [
-    "**/.build/**",
-    "**/generated/**"
-  ]
-}
-```
-
-Only entries with `status: canonical` are scanned. Repository paths are
-resolved inside the workspace root, duplicate IDs and canonical paths fail
-closed, and aliases are retained as inventory context without being scanned.
-
-The workspace command also discovers:
-
-- `.complexity/architectural-memory.json` or
-  `architecture/architectural-memory.json`;
-- `.complexity/invariants.json` or `architecture/invariants.json`.
-
-Explicit paths remain available through `--inventory`, `--memory`, and
-`--invariants`.
+See `tests/test_polyglot.py` for the adapter corpus and customer inventory cases.
 
 ## Read a finding in context
 
@@ -327,10 +270,10 @@ The core never imports an agent SDK or gives the executor broader authority.
 
 ## Current support and honest limits
 
-Python cyclomatic analysis is exact and AST-based. JavaScript and TypeScript
-repositories still appear in the canonical inventory and report, but their
-control-flow metrics are not analyzed yet. A TypeScript analyzer will be added
-only with a real parser, branch-evidence fixtures, and cross-runtime gold tests.
+Python analysis uses the stdlib AST. The validated adapter list is declared in
+`burden.py`, with independent corpus cases in `test_polyglot.py`. Unrecognized
+source stays in coverage as unknown. Coupling, semantic duplication and business
+necessity still require source investigation; this index does not certify them.
 
 The harness also deliberately does **not**:
 

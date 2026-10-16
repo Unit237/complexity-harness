@@ -3,13 +3,15 @@ from fnmatch import fnmatch
 import hashlib
 import json
 from pathlib import Path
+from .complexity_languages import EXTENSIONS, LANGUAGE_EXTENSIONS, NAMES
+
+SOURCE_SUFFIXES = set(EXTENSIONS)
 
 DEFAULT_EXCLUDE = {
     ".git", ".venv", "venv", "node_modules", "dist", "build",
     ".build", ".spec", "coverage", "__pycache__", ".pytest_cache",
     ".mypy_cache", ".tox",
 }
-SOURCE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".dart", ".go", ".rs", ".java", ".kt", ".swift", ".cs", ".rb", ".php", ".c", ".cpp", ".h", ".vue", ".svelte"}
 
 
 def _matches_pattern(path: str, pattern: str) -> bool:
@@ -52,7 +54,7 @@ def source_policy(config, exclude_patterns=()):
     configured = {str(value) for value in config.get("exclude") or []}
     directories = DEFAULT_EXCLUDE | {value for value in configured if "/" not in value and "*" not in value}
     patterns = {value for value in configured if value not in directories} | set(exclude_patterns)
-    digest = hashlib.sha256(json.dumps({"directories": sorted(directories), "patterns": sorted(patterns), "source_suffixes": sorted(SOURCE_SUFFIXES)}, sort_keys=True).encode()).hexdigest()
+    digest = hashlib.sha256(json.dumps({"directories": sorted(directories), "patterns": sorted(patterns), "inventory_policy": "all-files-v2", "languages": LANGUAGE_EXTENSIONS, "names": NAMES}, sort_keys=True).encode()).hexdigest()
     return directories, patterns, digest
 
 

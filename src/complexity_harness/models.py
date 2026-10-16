@@ -31,6 +31,9 @@ class FileMetric:
     parse_error: str | None = None
     unattributed_branches: tuple[BranchEvidence, ...] = ()
 
+    metric_family: str = "control_flow"
+    structural: dict[str, Any] = field(default_factory=dict)
+
     @property
     def max_cyclomatic(self) -> int:
         return max((row.cyclomatic for row in self.functions), default=0)

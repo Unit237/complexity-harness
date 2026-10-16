@@ -88,7 +88,7 @@ def build_refactor_job(
         "Characterize the current behavior with tests before changing control flow.",
         "Investigate analogous hotspots and shared invariants; do not move branches into a new helper merely to lower the number.",
         "Change only explicit allowed paths. Stop and request review if the correct fix needs broader scope.",
-        "Run every required check, create an after snapshot, and report the evidence-based diff.",
+        "Run every required check, create an after snapshot with the same analysis version, and report the evidence-based diff. Name the language and metric family; do not treat unknown coverage or a changed analysis baseline as improvement.",
         "Produce a draft change or draft PR only; do not merge or deploy.",
     ]
     job = {
@@ -96,7 +96,7 @@ def build_refactor_job(
         "finding_id": finding_id,
         "executor": executor,
         "objective": (
-            f"Reduce the control-flow complexity of {finding['symbol']} while preserving "
+            f"Reduce measured {finding.get('factors',{}).get('metric_family','control_flow')} complexity of {finding['symbol']} while preserving "
             "observable behavior and registered architectural invariants."
         ),
         "source": source,

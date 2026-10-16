@@ -1,7 +1,7 @@
-"""Versioned, explainable control-flow burden. Copied unchanged into consumers.
+"""Versioned, explainable code burden. Copied unchanged into consumers.
 
-This index describes measured control flow, not universal maintainability or
-semantic duplication. Missing languages never receive a zero complexity value.
+This index describes measured control flow and declarative structure, not
+universal maintainability or semantic duplication. Missing languages never receive a zero complexity value.
 """
 from __future__ import annotations
 
@@ -10,10 +10,15 @@ import json
 import math
 from pathlib import PurePosixPath
 import re
+from .complexity_languages import classify_path
 
 
-VERSION = "complexity-burden-v1"
-ANALYZER = "python-ast-cyclomatic-v2"
+VERSION = "complexity-burden-v2"
+ANALYZER = "polyglot-ast-v1/pack-0.13.0/ts-0.25.2"
+# This is the admission contract, not a claim that every available grammar has
+# a validated complexity adapter. Native parser dependencies stay in producers.
+CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua"}
+STRUCTURAL_LANGUAGES = {"hcl", "sql", "css", "json", "yaml", "html", "dockerfile", "make", "toml", "xml", "graphql"}
 POLICY = {
     "version": VERSION,
     "analyzer": ANALYZER,
@@ -31,8 +36,9 @@ POLICY = {
     ],
     "formula": "100 × (0.6 × mean function load + 0.4 × mean highest-decile load); function load = min((cyclomatic − 1) / 24, 1)",
     "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score.",
-    "meaning": "Measured Python control-flow burden; not a product readiness percentage.",
-    "reduction_audit": "Counts all recognized Python branch decisions, including lambdas and module-level control flow, so moving decisions outside named functions cannot earn credit.",
+    "meaning": "Measured code burden, 0–100, higher is worse. Control flow and declarative structure are separate factors; the highest factor determines repository burden. Unsupported source stays unknown.",
+    "reduction_audit": "Counts recognized decisions in every function, closure and module. Declarative structure uses excess nesting and fan-out, not cyclomatic complexity. Every factor must stay level or improve; changed unknown or excluded source blocks credit.",
+    "structural_formula": "Per document: one point for each container level beyond 3, plus each child container beyond 8. Flat scalar declarations do not add fan-out. Normalize with the same 24-point ceiling; aggregate each metric family separately and take the highest factor.",
     "reduction_requires": ["comparable_complete_scan", "fewer_decisions", "exact_revision_behavior_checks", "merged_source"],
 }
 
@@ -92,18 +98,45 @@ def measure_snapshot(snapshot):
         raise ValueError("Eligible source paths must be unique")
     if "eligible_files" in coverage and coverage["eligible_files"] != len(rows) + len(unknown):
         raise ValueError("Every eligible source file must be accounted for")
+    inventory = coverage.get("inventory")
+    if coverage.get("inventory_policy") != "all-files-v2" or not isinstance(inventory,list) or len(inventory)>50000:
+        raise ValueError("A complete, versioned all-file inventory is required")
+    inventory_by_path = {}
+    for entry in inventory:
+        path = _path(entry.get("path"))
+        if path in inventory_by_path or not re.fullmatch(r"[0-9a-f]{64}",entry.get("sha256", "")):
+            raise ValueError("Inventory paths must be unique and fingerprinted")
+        classification = classify_path(path)
+        if entry.get("kind") != "excluded" and (entry.get("kind") != classification["kind"] or entry.get("language") != classification["language"]):
+            raise ValueError("File classification must match the versioned inventory policy")
+        inventory_by_path[path] = entry
+    expected = {p for p,e in inventory_by_path.items() if e["kind"] in {"source","unknown","opaque"}}
+    if expected != seen | {row.get("path") for row in rows}:
+        raise ValueError("Every eligible file must be accounted for in the full inventory")
+    if any(inventory_by_path[p]["sha256"] != unknown_hashes[p] for p in unknown):
+        raise ValueError("Unknown source fingerprints must match the inventory")
     files, values, findings = [], [], []
-    errors = []
+    factors, language_counts = {}, {}
+    for entry in inventory:
+        if entry["path"] in expected:
+            language_counts.setdefault(entry["language"], {"language":entry["language"],"eligible_files":0,"analyzed_files":0,"support":"unsupported"})["eligible_files"] += 1
+    errors, error_reasons = [], {}
     for row in rows:
         path = _path(row.get("path"))
-        if path in seen or row.get("language") != "python" or not path.endswith(".py"):
-            raise ValueError("Measured Python paths must be unique and typed")
+        if path in seen or row.get("language") not in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES or row.get("language") != inventory_by_path[path]["language"]:
+            raise ValueError("Measured source paths must be unique and correctly typed")
         seen.add(path)
         if not re.fullmatch(r"[0-9a-f]{64}", row.get("sha256") or ""):
             raise ValueError("Every measured file needs a content hash")
         if row.get("parse_error"):
             errors.append(path)
+            error_reasons[path] = str(row["parse_error"])[:300]
             continue
+        family = "structure" if row["language"] in STRUCTURAL_LANGUAGES else "control_flow"
+        if row.get("metric_family","control_flow") != family:
+            raise ValueError("A language must use its declared metric family")
+        language_counts[row["language"]]["analyzed_files"] += 1
+        language_counts[row["language"]]["support"] = "measured"
         outside = row.get("unattributed_branches")
         if (not isinstance(outside, (list, tuple)) or len(outside) > 100000
                 or type(row.get("lines")) is not int or row["lines"] < 0):
@@ -124,7 +157,7 @@ def measure_snapshot(snapshot):
             line, end = function.get("line"), function.get("end_line")
             branches = function.get("branches")
             if (type(value) is not int or not 1 <= value <= 100000 or type(line) is not int
-                    or type(end) is not int or not 1 <= line <= end or not isinstance(branches, (list, tuple))
+                    or type(end) is not int or not 1 <= line <= end <= max(1,row["lines"]) or not isinstance(branches, (list, tuple))
                     or not isinstance(function.get("symbol"), str) or not function["symbol"]):
                 raise ValueError("Function measurements need valid symbols, spans and complexity")
             total = 0
@@ -141,17 +174,28 @@ def measure_snapshot(snapshot):
                 identity = hashlib.sha256(f"{path}:{function['symbol']}:{function.get('occurrence', 0)}".encode()).hexdigest()[:16]
                 findings.append({"id": "CYC-" + identity, "path": path, "symbol": function["symbol"],
                     "line": line, "end_line": end, "cyclomatic": value,
-                    "branches": branches[:100], "branch_count": len(branches),
-                    "explanation": "Independent control-flow decisions warrant investigation; this is not proof of a defect."})
+                    "branches": branches[:100], "branch_count": len(branches), "language":row["language"],"metric_family":family,
+                    "explanation": "Excess nesting or fan-out warrants structural investigation." if family=="structure" else "Independent control-flow decisions warrant investigation; this is not proof of a defect."})
+        if outside_decisions:
+            local.append(outside_decisions+1)
         values.extend(local)
+        factor = factors.setdefault(family,{"values":[],"decisions":0,"files":0})
+        factor["values"].extend(local)
+        factor["decisions"] += sum(v-1 for v in local)
+        factor["files"] += 1
         if len(values) > 100000:
             raise ValueError("Function inventory exceeds the bounded snapshot limit")
         files.append({"path": path, "sha256": row["sha256"], "lines": row.get("lines", 0),
-            "functions": len(local), "decisions": sum(v - 1 for v in local) + outside_decisions,
+            "language":row["language"],"metric_family":family,"structural":row.get("structural",{}),
+            "functions": len(local), "decisions": sum(v - 1 for v in local),
             "unattributed_decisions": outside_decisions,
             "max_cyclomatic": max(local, default=0), "score": score_values(local),
             "hotspots": sum(v >= 15 for v in local), "values": local})
-    score = score_values(values)
+    for factor in factors.values():
+        factor["score"] = score_values(factor.pop("values"))
+    score = score_repositories(factor["score"] for factor in factors.values())
+    for language in language_counts.values():
+        language["support"] = "measured" if language["analyzed_files"]==language["eligible_files"] else "partial" if language["analyzed_files"] else "unsupported"
     eligible = len(seen)
     return {"version": VERSION, "analyzer": ANALYZER, "source_sha": source["commit"],
         "scope_hash": coverage["scope_hash"], "score": score, "level": level(score),
@@ -159,7 +203,12 @@ def measure_snapshot(snapshot):
             "unsupported_paths": unknown, "unsupported_hashes": unknown_hashes, "parse_error_paths": errors,
             "percent": round(100 * len(files) / eligible, 2) if eligible else 0,
             "complete": bool(eligible) and not unknown and not errors,
-            "measured_languages": ["Python"] if files else []},
+            "measured_languages": sorted({row["language"] for row in files}),
+            "languages":sorted(language_counts.values(),key=lambda row:row["language"]),
+            "inventory_files":len(inventory),"inventory_counts":{kind:sum(e["kind"]==kind for e in inventory) for kind in sorted({e["kind"] for e in inventory})},
+            "unmeasured": [{"path":p,"language":inventory_by_path[p]["language"],"reason":error_reasons.get(p) or inventory_by_path[p].get("reason") or "Parser or dialect unavailable"} for p in unknown+errors],
+            "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated"})).encode()).hexdigest()},
+        "factors":factors,
         "summary": {"functions": len(values), "decisions": sum(file["decisions"] for file in files),
             "hotspots": sum(v >= 15 for v in values), "very_high": sum(v >= 40 for v in values),
             "max_cyclomatic": max(values, default=0)},
@@ -174,6 +223,12 @@ def reduction_evidence(before, after):
         reasons.append("The measurement policy or exclusions changed")
     if before["coverage"]["parse_error_paths"] or after["coverage"]["parse_error_paths"]:
         reasons.append("Source parse errors prevent a comparable reduction")
+    if before["coverage"].get("excluded_fingerprint") != after["coverage"].get("excluded_fingerprint"):
+        reasons.append("Changed excluded or generated source prevents a comparable reduction")
+    if before["coverage"].get("measured_languages") != after["coverage"].get("measured_languages"):
+        reasons.append("Language coverage changed; establish a comparable baseline before credit")
+    if any(after.get("factors",{}).get(family,{}).get("decisions",0) > before.get("factors",{}).get(family,{}).get("decisions",0) for family in set(before.get("factors",{})) | set(after.get("factors",{}))):
+        reasons.append("A measured factor increased; complexity may have moved between factors")
     if set(before["coverage"]["unsupported_paths"]) != set(after["coverage"]["unsupported_paths"]):
         reasons.append("Unmeasured source scope changed")
     elif before["coverage"].get("unsupported_hashes", {}) != after["coverage"].get("unsupported_hashes", {}):

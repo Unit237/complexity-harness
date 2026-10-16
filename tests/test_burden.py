@@ -16,12 +16,13 @@ def snapshot(values=(25,), sha="a", path="service.py"):
         "branches":[{"kind":"if","line":i*100+2,"contribution":value-1}] if value>1 else []}
         for i,value in enumerate(values)]
     return {"schema_version":"complexity-snapshot-v1","repository":{"commit":sha*40,"clean":True},
-        "coverage":{"analyzer":ANALYZER,"scope_hash":"c"*64,"unsupported_paths":[],"inventory_complete":True},
+        "coverage":{"analyzer":ANALYZER,"scope_hash":"c"*64,"unsupported_paths":[],"inventory_complete":True,"inventory_policy":"all-files-v2",
+            "inventory":[{"path":path,"kind":"source","language":"python","sha256":sha*64}]},
         "files":[{"path":path,"language":"python","sha256":sha*64,"lines":1000,"functions":functions,"unattributed_branches":[]}]}
 
 
 def test_fixed_policy_and_gold_cases_preserve_hotspot_tail_and_direction():
-    assert POLICY == json.loads((ROOT/"contracts/complexity-burden-v1.json").read_text())
+    assert POLICY == json.loads((ROOT/"contracts/complexity-burden-v2.json").read_text())
     for case in json.loads((ROOT/"tests/fixtures/burden-gold-v1.json").read_text()):
         assert score_values(case["values"]) == case["score"]
         assert level(case["score"]) == case["level"]
@@ -29,17 +30,18 @@ def test_fixed_policy_and_gold_cases_preserve_hotspot_tail_and_direction():
 
 def test_missing_languages_and_parse_failures_never_become_healthy_code(tmp_path):
     (tmp_path/"service.py").write_text("def choose(a):\n    if a:\n        return 1\n    return 0\n")
-    (tmp_path/"web.ts").write_text("export const choose = (a) => a ? 1 : 0;")
+    (tmp_path/"legacy.cbl").write_text("       IDENTIFICATION DIVISION.")
     payload=scan_repository(tmp_path).as_dict()
     payload["repository"].update(clean=True,commit="a"*40)
     result=measure_snapshot(payload)
     assert result["summary"]["decisions"]==1
     assert result["coverage"]["percent"]==50 and not result["coverage"]["complete"]
-    assert result["coverage"]["unsupported_paths"]==["web.ts"]
+    assert result["coverage"]["unsupported_paths"]==["legacy.cbl"]
     payload["files"][0]["parse_error"]="Invalid syntax"
     assert measure_snapshot(payload)["score"] is None
     payload["files"]=[]
-    assert measure_snapshot(payload)["score"] is None
+    with pytest.raises(ValueError,match="Every eligible"):
+        measure_snapshot(payload)
 
 
 def test_a_lower_index_cannot_prove_reduction_by_splitting_or_diluting_functions():
