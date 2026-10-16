@@ -29,6 +29,7 @@ class FileMetric:
     lines: int
     functions: tuple[FunctionMetric, ...] = ()
     parse_error: str | None = None
+    unattributed_branches: tuple[BranchEvidence, ...] = ()
 
     @property
     def max_cyclomatic(self) -> int:

@@ -1,6 +1,6 @@
 {
   "version": "complexity-burden-v1",
-  "analyzer": "python-ast-cyclomatic-v1",
+  "analyzer": "python-ast-cyclomatic-v2",
   "decision_ceiling": 24,
   "mean_weight": 0.6,
   "tail_weight": 0.4,
@@ -36,5 +36,6 @@
     "exact_revision_behavior_checks",
     "merged_source"
   ],
-  "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score."
+  "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score.",
+  "reduction_audit": "Counts all recognized Python branch decisions, including lambdas and module-level control flow, so moving decisions outside named functions cannot earn credit."
 }

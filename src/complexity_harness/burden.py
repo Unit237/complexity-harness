@@ -13,7 +13,7 @@ import re
 
 
 VERSION = "complexity-burden-v1"
-ANALYZER = "python-ast-cyclomatic-v1"
+ANALYZER = "python-ast-cyclomatic-v2"
 POLICY = {
     "version": VERSION,
     "analyzer": ANALYZER,
@@ -32,6 +32,7 @@ POLICY = {
     "formula": "100 × (0.6 × mean function load + 0.4 × mean highest-decile load); function load = min((cyclomatic − 1) / 24, 1)",
     "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score.",
     "meaning": "Measured Python control-flow burden; not a product readiness percentage.",
+    "reduction_audit": "Counts all recognized Python branch decisions, including lambdas and module-level control flow, so moving decisions outside named functions cannot earn credit.",
     "reduction_requires": ["comparable_complete_scan", "fewer_decisions", "exact_revision_behavior_checks", "merged_source"],
 }
 
@@ -103,6 +104,17 @@ def measure_snapshot(snapshot):
         if row.get("parse_error"):
             errors.append(path)
             continue
+        outside = row.get("unattributed_branches")
+        if (not isinstance(outside, (list, tuple)) or len(outside) > 100000
+                or type(row.get("lines")) is not int or row["lines"] < 0):
+            raise ValueError("A complete audit of branches outside named functions is required")
+        outside_decisions = 0
+        for branch in outside:
+            contribution = branch.get("contribution", 1)
+            if (type(contribution) is not int or contribution < 1 or type(branch.get("line")) is not int
+                    or not 1 <= branch["line"] <= row.get("lines", 0) or not isinstance(branch.get("kind"), str)):
+                raise ValueError("Unattributed branch evidence must lie inside its source file")
+            outside_decisions += contribution
         functions = row.get("functions")
         if not isinstance(functions, (list, tuple)) or len(functions) > 10000:
             raise ValueError("A bounded function inventory is required")
@@ -135,7 +147,8 @@ def measure_snapshot(snapshot):
         if len(values) > 100000:
             raise ValueError("Function inventory exceeds the bounded snapshot limit")
         files.append({"path": path, "sha256": row["sha256"], "lines": row.get("lines", 0),
-            "functions": len(local), "decisions": sum(v - 1 for v in local),
+            "functions": len(local), "decisions": sum(v - 1 for v in local) + outside_decisions,
+            "unattributed_decisions": outside_decisions,
             "max_cyclomatic": max(local, default=0), "score": score_values(local),
             "hotspots": sum(v >= 15 for v in local), "values": local})
     score = score_values(values)
@@ -147,7 +160,7 @@ def measure_snapshot(snapshot):
             "percent": round(100 * len(files) / eligible, 2) if eligible else 0,
             "complete": bool(eligible) and not unknown and not errors,
             "measured_languages": ["Python"] if files else []},
-        "summary": {"functions": len(values), "decisions": sum(v - 1 for v in values),
+        "summary": {"functions": len(values), "decisions": sum(file["decisions"] for file in files),
             "hotspots": sum(v >= 15 for v in values), "very_high": sum(v >= 40 for v in values),
             "max_cyclomatic": max(values, default=0)},
         "files": files, "findings": sorted(findings, key=lambda f: (-f["cyclomatic"], f["path"], f["line"])),
@@ -157,7 +170,7 @@ def measure_snapshot(snapshot):
 def reduction_evidence(before, after):
     """Necessary numerical conditions; the consumer must also verify delivery."""
     reasons = []
-    if before["version"] != after["version"] or before["scope_hash"] != after["scope_hash"]:
+    if before["version"] != after["version"] or before["analyzer"] != after["analyzer"] or before["scope_hash"] != after["scope_hash"]:
         reasons.append("The measurement policy or exclusions changed")
     if before["coverage"]["parse_error_paths"] or after["coverage"]["parse_error_paths"]:
         reasons.append("Source parse errors prevent a comparable reduction")

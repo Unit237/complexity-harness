@@ -72,6 +72,15 @@ class _BranchVisitor(ast.NodeVisitor):
     visit_Lambda = visit_FunctionDef
 
 
+class _AllSourceBranches(_BranchVisitor):
+    """Audit every branch, including anonymous and module-level control flow."""
+    def visit_FunctionDef(self, node):
+        self.generic_visit(node)
+
+    visit_AsyncFunctionDef = visit_FunctionDef
+    visit_Lambda = visit_FunctionDef
+
+
 class _FunctionCollector(ast.NodeVisitor):
     def __init__(self) -> None:
         self.scope: list[str] = []
@@ -124,10 +133,21 @@ def analyze_python_bytes(data: bytes, *, relative_path: str) -> FileMetric:
         )
     collector = _FunctionCollector()
     collector.visit(tree)
+    all_source = _AllSourceBranches()
+    all_source.visit(tree)
+    attributed = Counter((b.kind, b.line, b.contribution) for f in collector.metrics for b in f.branches)
+    unattributed = []
+    for branch in all_source.branches:
+        key = (branch.kind, branch.line, branch.contribution)
+        if attributed[key]:
+            attributed[key] -= 1
+        else:
+            unattributed.append(branch)
     return FileMetric(
         path=relative_path,
         language="python",
         sha256=hashlib.sha256(data).hexdigest(),
         lines=lines,
         functions=tuple(sorted(collector.metrics, key=lambda row: (row.line, row.symbol))),
+        unattributed_branches=tuple(unattributed),
     )

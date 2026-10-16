@@ -17,7 +17,7 @@ def snapshot(values=(25,), sha="a", path="service.py"):
         for i,value in enumerate(values)]
     return {"schema_version":"complexity-snapshot-v1","repository":{"commit":sha*40,"clean":True},
         "coverage":{"analyzer":ANALYZER,"scope_hash":"c"*64,"unsupported_paths":[],"inventory_complete":True},
-        "files":[{"path":path,"language":"python","sha256":sha*64,"lines":1000,"functions":functions}]}
+        "files":[{"path":path,"language":"python","sha256":sha*64,"lines":1000,"functions":functions,"unattributed_branches":[]}]}
 
 
 def test_fixed_policy_and_gold_cases_preserve_hotspot_tail_and_direction():
@@ -103,3 +103,20 @@ def test_clean_commit_inventory_excludes_ignored_files_and_accounts_for_symlink_
     assert result["coverage"]["eligible_files"]==2
     assert result["coverage"]["unsupported_paths"]==["folder.py"]
     assert [row["path"] for row in result["files"]]==["source.py"]
+
+
+@pytest.mark.parametrize("replacement",[
+    "decide = lambda value: 1 if value else 0\ndef choose(value):\n    return decide(value)\n",
+    "if True:\n    result = 1\nelse:\n    result = 0\ndef choose(value):\n    return result\n",
+])
+def test_moving_branches_outside_named_functions_cannot_earn_reduction_credit(replacement):
+    from dataclasses import asdict
+    from complexity_harness.python_analyzer import analyze_python_bytes
+    before=snapshot(sha="a");after=snapshot(sha="b")
+    before["files"]=[asdict(analyze_python_bytes(b"def choose(value):\n    return 1 if value else 0\n",relative_path="service.py"))]
+    after["files"]=[asdict(analyze_python_bytes(replacement.encode(),relative_path="service.py"))]
+    measured_before,measured_after=measure_snapshot(before),measure_snapshot(after)
+    assert measured_after["score"]<measured_before["score"]
+    assert measured_after["summary"]["decisions"]==measured_before["summary"]["decisions"]==1
+    assert measured_after["files"][0]["unattributed_decisions"]==1
+    assert not reduction_evidence(measured_before,measured_after)["comparable"]

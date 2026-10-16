@@ -110,7 +110,10 @@ A lower number is only a candidate reduction. `reduction_evidence` requires the
 same measurement policy, no parse errors, unchanged unsupported source, a new
 revision with changed measured source, and fewer decisions across the entire
 measured population. Splitting branches into helpers without removing decisions
-cannot earn credit. The consuming product additionally verifies approved diff
+cannot earn credit. The v2 parser also audits recognized branches in lambdas,
+module code and other locations outside named functions, so relocating decisions
+there cannot manufacture a reduction. These outside-function decisions participate
+in the reduction audit; the fixed index still describes named-function burden. The consuming product additionally verifies approved diff
 scope, merged source, successful CI and registered durable behavior checks on
 that exact revision. Completion, an open PR or tests against a different SHA do
 not lower the accepted score. Missing evidence remains visibly pending.
