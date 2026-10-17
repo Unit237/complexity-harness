@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "complexity-harness"
-version = "0.5.0"
+version = "0.6.0"
 description = "Inventory-aware complexity snapshots, architectural memory, and bounded refactor jobs"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -25,6 +25,10 @@ dependencies = [
   "tree-sitter-c-sharp==0.23.5",
   "tree-sitter-embedded-template==0.25.0",
   "tree-sitter-yaml==0.7.2",
+  "tree-sitter-dart==0.1.0",
+  "mini-racer==0.14.1",
+  "tinycss2==1.5.1",
+  "openstep-parser==2.0.3",
 ]
 
 [project.optional-dependencies]
@@ -45,6 +49,9 @@ complexity-harness = "complexity_harness.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+complexity_harness = ["vendor/*.js", "vendor/*.json", "vendor/*LICENSE"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

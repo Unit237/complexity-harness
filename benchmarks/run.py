@@ -15,7 +15,7 @@ import urllib.request
 
 import lizard
 from importlib.metadata import version
-from complexity_harness.burden import ANALYZER,CONTROL_LANGUAGES,STRUCTURAL_LANGUAGES,measure_snapshot
+from complexity_harness.burden import ANALYZER,CONTROL_LANGUAGES,STRUCTURAL_LANGUAGES,MAX_SOURCE_BYTES,measure_snapshot
 from complexity_harness.complexity_evidence import pack_file
 from complexity_harness.complexity_languages import classify_path
 from complexity_harness.polyglot_analyzer import analyze_bytes
@@ -58,9 +58,9 @@ def capture(row,archive_path):
             data=member.linkname.encode() if not member.isfile() else archive.extractfile(member).read()
             entry={'path':path,'sha256':content_fingerprint(data),**classification}
             if _is_excluded(relative,directory_names=directories,patterns=patterns,workspace_path=None):entry.update(kind='excluded',reason='Repository exclusion policy')
-            if entry['kind'] in {'source','unknown','opaque'}:
+            if entry['kind'] in {'source','unknown'}:
                 language=entry['language']
-                if member.isfile() and len(data)<=512*1024 and language in CONTROL_LANGUAGES|STRUCTURAL_LANGUAGES:
+                if member.isfile() and len(data)<=MAX_SOURCE_BYTES and language in CONTROL_LANGUAGES|STRUCTURAL_LANGUAGES:
                     try:metric=analyze_bytes(data,relative_path=path,language=language)
                     except UnicodeDecodeError:metric=None
                     if metric:

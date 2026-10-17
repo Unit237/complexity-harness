@@ -20,12 +20,13 @@ def test_versioned_calibration_disclosure_is_bound_to_the_measured_corpus():
  from complexity_harness.burden import ANALYZER, VERSION
  import hashlib
  root=Path(__file__).parents[1]
- report=json.loads((root/"benchmarks/calibration-v2.json").read_text())
+ report=json.loads((root/"benchmarks/calibration-v3.json").read_text())
  manifest=json.loads((root/"benchmarks/repositories-v1.json").read_text())
  assert report["measurement_version"]==VERSION and report["analyzer"]==ANALYZER
- assert report["summary"]["construct_cases"]==len(CASES)+report["summary"]["modern_python_cases"]==186
+ assert report["summary"]["construct_cases"]==len(CASES)+report["summary"]["modern_python_cases"]+report["summary"]["customer_syntax_cases"]==202
  assert {row["repository"]:row["commit"] for row in report["repositories"]}=={row["repository"]:row["commit"] for row in manifest["repositories"]}
  assert all(len(row["archive_sha256"])==64 for row in manifest["repositories"])
  assert report["evidence_hashes"]["construct_oracle"]==hashlib.sha256((root/"benchmarks/construct-oracle-v1.json").read_bytes()).hexdigest()
+ assert report["evidence_hashes"]["customer_syntax_oracle"]==hashlib.sha256((root/"benchmarks/customer-syntax-v1.json").read_bytes()).hexdigest()
  assert report["evidence_hashes"]["repository_manifest"]==hashlib.sha256((root/"benchmarks/repositories-v1.json").read_bytes()).hexdigest()
  assert all(row["score"] is None for row in report["repositories"] if row["status"]!="measured")

@@ -105,7 +105,7 @@ def test_workspace_scan_uses_inventory_exclusions_memory_and_unique_ids(tmp_path
     assert payload["summary"] == {
         "repositories": 2,
         "files": 3,
-        "functions": 4,
+        "functions": 5,
         "findings": 2,
         "architectural_memory_entries": 1,
         "registered_invariants": 1,

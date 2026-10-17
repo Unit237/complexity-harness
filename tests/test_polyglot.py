@@ -11,6 +11,7 @@ PROGRAMS = {
  'typescript':('app.ts','function choose(a: boolean): number { if (a) return 1; return 0; }'),
  'tsx':('app.tsx','const Choose = (a: boolean) => { if (a) return <div/>; return null; };'),
  'c':('app.c','int choose(int a) { if (a) return 1; return 0; }'),
+ 'c_header':('app.h','inline int choose(int a) { if (a) return 1; return 0; }'),
  'cpp':('app.cc','int choose(int a) { if (a) return 1; return 0; }'),
  'csharp':('app.cs','class App { int Choose(bool a) { if(a) return 1; return 0; } }'),
  'java':('App.java','class App { int choose(boolean a) { if(a) return 1; return 0; } }'),
@@ -48,6 +49,11 @@ STRUCTURES = {
  'make':('Makefile','all:\n\techo hello\n'),
  'toml':('config.toml','a = [[[[[1]]]]]\n'),
  'graphql':('app.graphql','query { user { friends { friends { name } } } }'),
+ 'cmake':('CMakeLists.txt','if(ON)\n message(STATUS "yes")\nendif()\n'),
+ 'protobuf':('app.proto','syntax = "proto3"; message A { string name = 1; }'),
+ 'config':('app.ini','[application]\nname = customer\n'),
+ 'properties':('app.properties','application.name=customer\n'),
+ 'openstep':('project.pbxproj','{ objects = { abc = { isa = PBXProject; }; }; }'),
 }
 
 @pytest.mark.parametrize('language',sorted(STRUCTURES))
@@ -74,10 +80,11 @@ def test_customer_inventory_includes_unknown_dsl_declarative_code_and_unusual_ex
  payload=scan_repository(tmp_path).as_dict();payload['repository'].update(clean=True,commit='a'*40)
  result=measure_snapshot(payload)
  assert result['coverage']['inventory_files']==12
- assert result['coverage']['eligible_files']==11
+ assert result['coverage']['eligible_files']==10
  assert result['coverage']['analyzed_files']==7
- assert result['coverage']['percent']==63.64
- assert set(result['coverage']['unsupported_paths'])=={'legacy.cbl','rules.customerlang','component.vue','.env'}
+ assert result['coverage']['percent']==70
+ assert set(result['coverage']['unsupported_paths'])=={'legacy.cbl','rules.customerlang','component.vue'}
+ assert result['coverage']['inventory_counts']['opaque']==1
  assert set(result['factors'])=={'control_flow','structure'}
  assert result['score']==result['factors']['control_flow']['score']
  assert result['factors']['structure']['score'] is None
@@ -87,8 +94,8 @@ def test_customer_inventory_includes_unknown_dsl_declarative_code_and_unusual_ex
   measure_snapshot(omitted)
 
 
-def test_embedded_source_and_invalid_dialects_are_unmeasured():
- for lang,path,source in [('html','page.html','<script>if (ready) go()</script>'),('javascript','broken.js','function broken(')]:
+def test_invalid_embedded_source_and_invalid_dialects_are_unmeasured():
+ for lang,path,source in [('html','page.html','<script>function broken(</script>'),('javascript','broken.js','function broken(')]:
   metric=analyze_bytes(source.encode(),relative_path=path,language=lang)
   assert metric.parse_error and not metric.functions
 
@@ -125,7 +132,7 @@ def test_reduction_cannot_hide_in_unknown_excluded_source_or_another_factor(tmp_
 
 def test_missing_or_wrong_parser_bundle_is_explicitly_unmeasured(monkeypatch):
  monkeypatch.setattr('complexity_harness.polyglot_analyzer.version',lambda package:'unexpected')
- metric=analyze_bytes(b'function choose(a) { if(a) return 1; }',relative_path='app.js',language='javascript')
+ metric=analyze_bytes(b'int choose(int a) { if(a) return 1; }',relative_path='app.c',language='c')
  assert metric.parse_error and not metric.functions
 
 

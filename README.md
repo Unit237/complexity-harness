@@ -91,7 +91,7 @@ Configuration is optional at `.complexity/config.json`:
 complexity-harness burden /tmp/before.json
 ```
 
-`complexity-burden-v4` maps explicit control-flow decisions onto 0–100;
+`complexity-burden-v5` maps explicit control-flow decisions onto 0–100;
 higher is worse. A unit with 0 / 5 / 14 / 24 decisions has a fixed load of
 0 / 20.83 / 58.33 / 100. The repository combines 60% mean load with 40% mean
 highest-decile load; the highest repository sets the product score. These are
@@ -291,7 +291,7 @@ necessity still require source investigation; this index does not certify them.
 Large scans retain exact histograms and every unit's immutable branch evidence;
 only investigation examples are capped at 1,000. Lossless compressed evidence
 supports a 12 MB wire / 256 MB expanded budget, up to 200,000 eligible source
-files and 250,000 inventory entries. Individual source files have a 512 KB parsing
+files and 250,000 inventory entries. Individual source files have a 8 MB parsing
 budget and a 100,000-unit ceiling. Capacity failures cannot publish partial
 baselines. Use `scan --compact` for per-file compressed output. The broker
 resumes bounded passes, reuses evidence only for unchanged Git blobs, and
@@ -330,3 +330,5 @@ which a human can select a small, testable, architecturally informed job.
 ## License
 
 MIT. Built by [Light Reach](https://lightreach.io).
+
+The v5 analysis generation adds pinned Babel 7.29.8 for JavaScript/JSX/Flow/TypeScript, Dart 0.1.0 for modern patterns, syntax-aware CSS, C/C++ header selection and common platform declaration handling, and CMake/Protobuf/INI/properties/OpenStep diagnostics. HTML inline scripts, event attributes and JavaScript URLs count in the programming index; embedded JSON/CSS remains diagnostic-only. Source is parsed as data without executing customer code or running project build tools. Parser/scope changes establish a new baseline and earn no Work credit. Private configuration and platform resources stay separately fingerprinted; changing them blocks reduction credit. Unknown formats, unrecognized macros/templates, malformed syntax and finite resource limits remain explicit coverage limits.

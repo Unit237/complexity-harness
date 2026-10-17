@@ -13,7 +13,7 @@ from .polyglot_analyzer import analyze_bytes
 from .burden import CONTROL_LANGUAGES, STRUCTURAL_LANGUAGES
 from .complexity_languages import classify_path
 from .burden import ANALYZER, MAX_SOURCE_BYTES
-from .source_scope import _is_excluded, source_policy, content_fingerprint
+from .source_scope import _is_excluded, source_policy, content_fingerprint, file_fingerprint
 
 
 def _config(root: Path) -> dict[str, Any]:
@@ -61,12 +61,13 @@ def scan_repository(
             continue
         relative = path.relative_to(repository_root)
         name = relative.as_posix()
-        data = os.readlink(path).encode() if path.is_symlink() else path.read_bytes()
-        entry = {"path":name, "sha256":content_fingerprint(data), **classify_path(name)}
+        size=path.lstat().st_size
+        data = os.readlink(path).encode() if path.is_symlink() else path.read_bytes() if size<=MAX_SOURCE_BYTES else None
+        entry = {"path":name, "sha256":content_fingerprint(data) if data is not None else file_fingerprint(path), **classify_path(name)}
         if _is_excluded(relative,directory_names=exclude_names,patterns=patterns,workspace_path=workspace_path):
             entry.update(kind="excluded",reason="Repository exclusion policy")
-        eligible = entry["kind"] in {"source","unknown","opaque"}
-        if eligible and not path.is_symlink() and len(data)<=MAX_SOURCE_BYTES and entry["language"] in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES:
+        eligible = entry["kind"] in {"source","unknown"}
+        if eligible and not path.is_symlink() and data is not None and entry["language"] in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES:
             try:
                 metric = analyze_bytes(data,relative_path=name,language=entry["language"])
                 files.append(metric)
@@ -76,7 +77,7 @@ def scan_repository(
             except UnicodeDecodeError:
                 entry.update(status="unsupported",reason="Source encoding is not UTF-8")
         elif eligible:
-            entry.update(status="unsupported",reason="Symlink, oversized source or no validated adapter")
+            entry.update(status="unsupported",reason="Symlink metadata; source is not followed" if path.is_symlink() else f"Source exceeds the {MAX_SOURCE_BYTES}-byte analysis limit" if data is None else "No validated adapter for this file format")
         else:
             entry["status"] = entry["kind"]
         if entry["status"] == "unsupported":

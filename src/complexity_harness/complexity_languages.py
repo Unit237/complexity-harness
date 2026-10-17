@@ -7,14 +7,15 @@ from pathlib import PurePosixPath
 
 LANGUAGE_EXTENSIONS = {
     'python': 'py pyw pyi', 'javascript': 'js jsx mjs cjs',
-    'typescript': 'ts mts cts', 'tsx': 'tsx', 'c': 'c h',
+    'typescript': 'ts mts cts', 'tsx': 'tsx', 'c': 'c', 'c_header': 'h',
     'cpp': 'cc cpp cxx c++ hh hpp hxx ipp tpp', 'csharp': 'cs',
     'java': 'java', 'go': 'go', 'rust': 'rs', 'ruby': 'rb rake gemspec',
     'php': 'php phtml', 'kotlin': 'kt kts', 'swift': 'swift', 'dart': 'dart',
     'bash': 'sh bash zsh', 'lua': 'lua', 'hcl': 'tf tfvars hcl',
     'sql': 'sql', 'css': 'css', 'json': 'json jsonc', 'yaml': 'yaml yml',
     'html': 'html htm', 'dockerfile': 'dockerfile', 'make': 'mk',
-    'toml': 'toml', 'xml': 'xml xsl xslt xsd svg', 'graphql': 'graphql gql',
+    'toml': 'toml', 'xml': 'xml xsl xslt xsd svg plist xcworkspacedata xcsettings xcscheme storyboard xib xcprivacy entitlements manifest', 'graphql': 'graphql gql',
+    'openstep': 'pbxproj', 'properties': 'properties xcconfig',
     # Recognized source without a validated complexity adapter is explicit.
     'vue': 'vue', 'svelte': 'svelte', 'astro': 'astro', 'notebook': 'ipynb',
     'scss': 'scss sass less', 'scala': 'scala sc', 'elixir': 'ex exs',
@@ -26,12 +27,13 @@ LANGUAGE_EXTENSIONS = {
     'apex': 'cls trigger', 'ada': 'adb ads', 'pascal': 'pas pp',
     'assembly': 's asm', 'verilog': 'v sv svh', 'vhdl': 'vhd vhdl',
     'protobuf': 'proto', 'bicep': 'bicep', 'nix': 'nix', 'cmake': 'cmake',
-    'config': 'ini cfg conf properties env',
+    'config': 'ini cfg conf env',
 }
 EXTENSIONS = {'.'+ext: language for language, exts in LANGUAGE_EXTENSIONS.items() for ext in exts.split()}
 NAMES = {'Dockerfile':'dockerfile', 'Containerfile':'dockerfile', 'Makefile':'make',
          'GNUmakefile':'make', 'Rakefile':'ruby', 'Gemfile':'ruby', 'Vagrantfile':'ruby',
-         'Podfile':'ruby', 'Brewfile':'ruby', 'CMakeLists.txt':'cmake', 'Jenkinsfile':'groovy'}
+         'Podfile':'ruby', 'Brewfile':'ruby', 'Appfile':'ruby', 'Fastfile':'ruby',
+         'CMakeLists.txt':'cmake', 'Jenkinsfile':'groovy', '.metadata':'yaml'}
 ASSETS = set('png jpg jpeg gif webp ico avif mp3 mp4 mov wav woff woff2 ttf otf pdf zip gz bz2 xz tar 7z jar class pyc so dylib dll exe a o bin db sqlite sqlite3 lock'.split())
 DOCS = {'.md', '.rst', '.adoc', '.txt', '.csv', '.tsv'}
 DATA_DIRECTORIES = {'artifacts','reports','test-results','fixtures','__fixtures__','__snapshots__'}
@@ -48,14 +50,18 @@ def classify_path(path):
         return {'kind':'asset', 'language':None, 'reason':'Operating-system metadata'}
     if name.lower().endswith(GENERATED_SUFFIXES):
         return {'kind':'generated', 'language':None, 'reason':'Recognized generated source suffix'}
+    if suffix in {'.tfplan', '.patch', '.diff', '.strings', '.rc'} or name == 'tfplan':
+        return {'kind':'data', 'language':None, 'reason':'Plan, patch or platform resource data; retained outside the control-flow score'}
     if name in LOCKS or name.endswith('.min.js') or name.endswith('.min.css') or name.endswith('.map'):
         return {'kind':'generated', 'language':None, 'reason':'Generated or dependency lock file'}
     if name == '.env' or name.startswith('.env.') or suffix in {'.pem', '.key', '.p12', '.pfx'}:
         return {'kind':'opaque', 'language':'configuration', 'reason':'Sensitive configuration; metadata only'}
     language = NAMES.get(name) or ('dockerfile' if name.startswith('Dockerfile.') else None) or EXTENSIONS.get(suffix)
+    if not language and suffix in {'.example', '.sample', '.template', '.dist'}:
+        language = EXTENSIONS.get(PurePosixPath(path.stem).suffix.lower())
     if language:
         return {'kind':'source', 'language':language, 'reason':None}
-    if suffix in DOCS or name.lower() in {'license', 'licence', 'notice', 'authors', '.gitignore', '.gitattributes', '.dockerignore'}:
+    if suffix in DOCS | {'.mdc'} or name.lower() in {'license', 'licence', 'notice', 'authors', '.gitignore', '.gitattributes', '.dockerignore'}:
         return {'kind':'documentation', 'language':None, 'reason':'Documentation or repository metadata'}
     if suffix.lstrip('.') in ASSETS:
         return {'kind':'asset', 'language':None, 'reason':'Binary or packaged asset'}

@@ -9,7 +9,7 @@ versioned results and reference disagreement audit are committed here.
 
 ## What the number means
 
-`complexity-burden-v4` measures explicit control-flow decisions. The fixed
+`complexity-burden-v5` measures explicit control-flow decisions. The fixed
 anchors are 0, 5, 14 and 24 decisions → 0, 20.83, 58.33 and 100 load points.
 A repository combines 60% mean unit load and 40% highest-decile mean load.
 A product uses its highest repository score. These thresholds are policy
@@ -59,45 +59,32 @@ is explicitly a new baseline; it earns no reduction credit.
 
 ## Results
 
-The v4 run completes all 20 pinned repositories: 18 scored and two diagnostic-only,
-with 14,811 analyzed files and 148,666 programming units. The former 100,000-unit
-repository cap is replaced by exact histograms, bounded investigation examples and
-lossless compressed receipts. Skaffold accounts for all 12,215 eligible files and
-measures 111,693 programming units; dbt's newer Python syntax is now parsed.
-Prior measurable repository scores are unchanged. Analysis changes establish a
-new baseline and earn no Work credit. Scored coverage excludes declarative formats
-and includes unknown files in its denominator.
+The v5 run completes all 20 pinned repositories: 18 scored and two diagnostic-only, with 15,050 analyzed files and 164,518 programming units. It replays the same immutable archives and exposes all remaining parse failures and unsupported source. Improvements in coverage establish a new baseline and never earn Work credit. Scored coverage excludes diagnostic-only documents and includes unknown source in its denominator.
 
-Capacity remains finite: 200,000 eligible source files, 250,000 inventory entries,
-512 KB per source file, 100,000 units per file, 12 MB wire and 256 MB expanded
-evidence. Only 1,000 investigation examples are retained in the projection; counts
-and scores include every measured unit. Truncated/incomplete inventory or exceeded
-receipt budgets cannot publish a partial baseline. Source-map pages contain at most
-200 immediate children. Tests cover over 20,000 source files, over 100,000 units,
-interrupted scans, exact-blob reuse, changed heads and malformed compressed data.
+Capacity remains finite: 200,000 eligible source files, 250,000 inventory entries, 8 MB per source file, 100,000 units per file, 12 MB wire and 256 MB expanded evidence. Complete counts use exact histograms and bounded, lossless receipts. Only 1,000 hotspot examples are projected; all measured units contribute to the index.
 
-| Repository | Role | v3 | v4 | Scored source coverage | Parse failures |
-|---|---|---:|---:|---:|---:|
-| [psf/requests](https://github.com/psf/requests/tree/0e322af87745eff34caffe4df68456ebc20d9068) | python | 14.08 | 14.08 | 58.06% | 1 |
-| [expressjs/express](https://github.com/expressjs/express/tree/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4) | javascript | 3.16 | 3.16 | 79.33% | 4 |
-| [vuejs/core](https://github.com/vuejs/core/tree/6eb29d345aa73746207f80c89ee8b37ff7b949c9) | typescript/tsx | 13.07 | 13.07 | 90.26% | 28 |
-| [go-chi/chi](https://github.com/go-chi/chi/tree/0a20a0e3400e551803f463d17a0ab84ee8afef3c) | go | 13.28 | 13.28 | 93.59% | 0 |
-| [DapperLib/Dapper](https://github.com/DapperLib/Dapper/tree/bd4f75b512de3e00f2c2631d5309961a1ecfea23) | csharp | 6.52 | 6.52 | 84.15% | 1 |
-| [spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic/tree/500158f732419217507c7656904b8e6aa1bcc0d6) | java | 7.73 | 7.73 | 62.5% | 8 |
-| [sinatra/sinatra](https://github.com/sinatra/sinatra/tree/7b50a1bbb5324838908dfaa00ec53ad322673a29) | ruby | 4.0 | 4.0 | 60.23% | 0 |
-| [slimphp/Slim](https://github.com/slimphp/Slim/tree/5943393b88716eb9e82c4161caa956af63423913) | php | 10.66 | 10.66 | 100.0% | 0 |
-| [tokio-rs/axum](https://github.com/tokio-rs/axum/tree/c59208c86fded335cd85e388030ad59347b0e5ae) | rust | 7.9 | 7.9 | 82.92% | 4 |
-| [dart-lang/shelf](https://github.com/dart-lang/shelf/tree/2536c15a562cb183dabbc628824a215663830325) | dart | 18.86 | 18.86 | 90.48% | 8 |
-| [Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization/tree/f9f160a680da9f92c3bb121ae3644c96e57ba42e) | kotlin | 5.07 | 5.07 | 91.46% | 143 |
-| [apple/swift-http-types](https://github.com/apple/swift-http-types/tree/ef18d829e8b92d731ad27bb81583edd2094d1ce3) | swift | 17.87 | 17.87 | 76.19% | 3 |
-| [libuv/libuv](https://github.com/libuv/libuv/tree/8fb9cb919489a48880680a56efecff6a7dfb4504) | c | 20.27 | 20.27 | 75.26% | 72 |
-| [fmtlib/fmt](https://github.com/fmtlib/fmt/tree/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2) | cpp | 20.1 | 20.1 | 37.86% | 37 |
-| [lunarmodules/busted](https://github.com/lunarmodules/busted/tree/02f31a9c103a44e166617cfdb6ba1b8994a9c912) | lua | 10.47 | 10.47 | 79.51% | 1 |
-| [bats-core/bats-core](https://github.com/bats-core/bats-core/tree/b640ec3cf2c7c9cfc9e6351479261186f76eeec8) | bash | 18.88 | 18.88 | 16.83% | 1 |
-| [terraform-aws-modules/terraform-aws-vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc/tree/961c9b51e3ed3959d9419f019e7085c087bf7297) | hcl | diagnostic only | diagnostic only | 0.0% | 0 |
-| [dbt-labs/jaffle-shop](https://github.com/dbt-labs/jaffle-shop/tree/5beb145b00f5465ec759cfcdd9745e858818cf95) | sql/jinja | diagnostic only | 11.67 | 12.5% | 15 |
-| [necolas/normalize.css](https://github.com/necolas/normalize.css/tree/fc091cce1534909334c1911709a39c22d406977b) | css | diagnostic only | diagnostic only | 0.0% | 1 |
-| [GoogleContainerTools/skaffold](https://github.com/GoogleContainerTools/skaffold/tree/f132ab25adf1599c7fbdce733144991126565386) | yaml/json | resource limited | 21.76 | 94.35% | 82 |
+| Repository | Role | v4 | v5 | Scored source coverage | Parse failures | Unsupported |
+|---|---|---:|---:|---:|---:|---:|
+| [psf/requests](https://github.com/psf/requests/tree/0e322af87745eff34caffe4df68456ebc20d9068) | python | 14.08 | 14.07 | 68.52% | 2 | 17 |
+| [expressjs/express](https://github.com/expressjs/express/tree/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4) | javascript | 3.16 | 3.15 | 78.02% | 3 | 37 |
+| [vuejs/core](https://github.com/vuejs/core/tree/6eb29d345aa73746207f80c89ee8b37ff7b949c9) | typescript/tsx | 13.07 | 13.04 | 89.61% | 8 | 54 |
+| [go-chi/chi](https://github.com/go-chi/chi/tree/0a20a0e3400e551803f463d17a0ab84ee8afef3c) | go | 13.28 | 13.28 | 96.05% | 0 | 3 |
+| [DapperLib/Dapper](https://github.com/DapperLib/Dapper/tree/bd4f75b512de3e00f2c2631d5309961a1ecfea23) | csharp | 6.52 | 6.52 | 84.15% | 1 | 28 |
+| [spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic/tree/500158f732419217507c7656904b8e6aa1bcc0d6) | java | 7.73 | 7.71 | 78.46% | 5 | 14 |
+| [sinatra/sinatra](https://github.com/sinatra/sinatra/tree/7b50a1bbb5324838908dfaa00ec53ad322673a29) | ruby | 4.0 | 4.0 | 60.23% | 0 | 103 |
+| [slimphp/Slim](https://github.com/slimphp/Slim/tree/5943393b88716eb9e82c4161caa956af63423913) | php | 10.66 | 10.66 | 100.0% | 0 | 0 |
+| [tokio-rs/axum](https://github.com/tokio-rs/axum/tree/c59208c86fded335cd85e388030ad59347b0e5ae) | rust | 7.9 | 7.88 | 85.84% | 0 | 50 |
+| [dart-lang/shelf](https://github.com/dart-lang/shelf/tree/2536c15a562cb183dabbc628824a215663830325) | dart | 18.86 | 18.96 | 100.0% | 0 | 0 |
+| [Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization/tree/f9f160a680da9f92c3bb121ae3644c96e57ba42e) | kotlin | 5.07 | 5.07 | 94.67% | 143 | 22 |
+| [apple/swift-http-types](https://github.com/apple/swift-http-types/tree/ef18d829e8b92d731ad27bb81583edd2094d1ce3) | swift | 17.87 | 17.87 | 76.19% | 3 | 2 |
+| [libuv/libuv](https://github.com/libuv/libuv/tree/8fb9cb919489a48880680a56efecff6a7dfb4504) | c | 20.27 | 23.7 | 79.06% | 63 | 18 |
+| [fmtlib/fmt](https://github.com/fmtlib/fmt/tree/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2) | cpp | 20.1 | 19.07 | 46.74% | 34 | 15 |
+| [lunarmodules/busted](https://github.com/lunarmodules/busted/tree/02f31a9c103a44e166617cfdb6ba1b8994a9c912) | lua | 10.47 | 10.47 | 79.51% | 1 | 24 |
+| [bats-core/bats-core](https://github.com/bats-core/bats-core/tree/b640ec3cf2c7c9cfc9e6351479261186f76eeec8) | bash | 18.88 | 18.88 | 16.83% | 1 | 251 |
+| [terraform-aws-modules/terraform-aws-vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc/tree/961c9b51e3ed3959d9419f019e7085c087bf7297) | hcl | diagnostic only | diagnostic only | 0.0% | 0 | 1 |
+| [dbt-labs/jaffle-shop](https://github.com/dbt-labs/jaffle-shop/tree/5beb145b00f5465ec759cfcdd9745e858818cf95) | sql/jinja | 11.67 | 11.67 | 12.5% | 15 | 7 |
+| [necolas/normalize.css](https://github.com/necolas/normalize.css/tree/fc091cce1534909334c1911709a39c22d406977b) | css | diagnostic only | diagnostic only | 0.0% | 0 | 1 |
+| [GoogleContainerTools/skaffold](https://github.com/GoogleContainerTools/skaffold/tree/f132ab25adf1599c7fbdce733144991126565386) | yaml/json | 21.76 | 21.66 | 95.43% | 77 | 477 |
 
 ## Reproduce
 
@@ -118,3 +105,7 @@ The full before/after receipts are retained in the local acceptance evidence.
 Independent methodology references: [Lizard](https://github.com/terryyin/lizard)
 and [Sonar's complexity definitions](https://docs.sonarsource.com/sonarqube-server/2025.1/user-guide/code-metrics/metrics-definition).
 Our declared conventions and exact branch evidence are the measurement contract.
+
+## v5 coverage validation
+
+The same 20 pinned repositories are replayed with 202 hand-specified construct/syntax cases. The v5 disclosure is `calibration-v3.json`; it accounts for 15,050 analyzed files and 164,518 programming units. Seventeen programming languages, a C/C++ header adapter and sixteen declarative-format adapters are validated. The old 100-file preview gap is resolved by measuring 92 more files and separately classifying eight private/document/resource files, while retaining their inventory fingerprints. Full coverage on that baseline is not a claim that every future customer language or dialect is supported.

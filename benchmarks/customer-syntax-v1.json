@@ -1,0 +1,98 @@
+[
+  {
+    "path": "Panel.jsx",
+    "language": "javascript",
+    "source": "const Panel = x =>\u2028<a href=\"/?a=1&b=2\">A & B {x && <p/>}</a>;",
+    "decisions": 1
+  },
+  {
+    "path": "types.ts",
+    "language": "typescript",
+    "source": "const xs: import(\"./types\").Item[] = []; const choose = (x = true) => x ? xs : [];",
+    "decisions": 2
+  },
+  {
+    "path": "module.ts",
+    "language": "typescript",
+    "source": "using file = open(); function f(x?: {a?: number}) { return x?.a ?? 0; }",
+    "decisions": 2
+  },
+  {
+    "path": "component.tsx",
+    "language": "tsx",
+    "source": "const F = <T,>(x:T) => <div>{x ? \"A & B\" : \"C\"}</div>;",
+    "decisions": 1
+  },
+  {
+    "path": "decorated.ts",
+    "language": "typescript",
+    "source": "@sealed class App { @logged f(x: boolean) { if(x) return 1; return 0; } }",
+    "decisions": 1
+  },
+  {
+    "path": "flow.js",
+    "language": "javascript",
+    "source": "// @flow\nfunction f(x: ?string): number { return x ? 1 : 0; }",
+    "decisions": 1
+  },
+  {
+    "path": "logic.js",
+    "language": "javascript",
+    "source": "throw new Error(\"Customer code must not execute\"); while (true) {}",
+    "decisions": 1
+  },
+  {
+    "path": "patterns.dart",
+    "language": "dart",
+    "source": "String f(Object x) { if (x case String()) { return x; } return \"\"; }",
+    "decisions": 1
+  },
+  {
+    "path": "switch.dart",
+    "language": "dart",
+    "source": "int f(Object x) { switch(x) { case String(): return 1; default: return 0; } }",
+    "decisions": 1
+  },
+  {
+    "path": "public.h",
+    "language": "c_header",
+    "source": "class A { public: int f(bool x) { return x ? 1 : 0; } };",
+    "decisions": 1
+  },
+  {
+    "path": "public.h",
+    "language": "c_header",
+    "source": "static int f(int x) { if(x) return 1; return 0; }",
+    "decisions": 1
+  },
+  {
+    "path": "windows.cpp",
+    "language": "cpp",
+    "source": "int APIENTRY f(_In_ int x) { if(x && enabled()) return 1; return 0; }",
+    "decisions": 2
+  },
+  {
+    "path": "gtk.cc",
+    "language": "cpp",
+    "source": "G_DEFINE_TYPE(App, app, GTK_TYPE_APPLICATION)\nint f(int x) {\n g_autoptr(App) app = create();\n if(x) return 1; return 0;\n}",
+    "decisions": 1
+  },
+  {
+    "path": "gtk.h",
+    "language": "c_header",
+    "source": "G_DECLARE_FINAL_TYPE(App, app, MY, APP,\n GtkApplication)\nint f(int x) { if(x) return 1; return 0; }",
+    "decisions": 1
+  },
+  {
+    "path": "guard.dart",
+    "language": "dart",
+    "source": "int f(Object x) { switch(x) { case int() when x > 0: return 1; default: return 0; } }",
+    "decisions": 2
+  },
+  {
+    "path": "nullable.dart",
+    "language": "dart",
+    "source": "int f(A? a) { return a?.x ?? 0; }",
+    "decisions": 2
+  }
+]

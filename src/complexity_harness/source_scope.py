@@ -54,7 +54,7 @@ def source_policy(config, exclude_patterns=()):
     configured = {str(value) for value in config.get("exclude") or []}
     directories = DEFAULT_EXCLUDE | {value for value in configured if "/" not in value and "*" not in value}
     patterns = {value for value in configured if value not in directories} | set(exclude_patterns)
-    digest = hashlib.sha256(json.dumps({"directories": sorted(directories), "patterns": sorted(patterns), "inventory_policy": "all-files-v2", "data_directories":sorted(DATA_DIRECTORIES), "generated_suffixes":GENERATED_SUFFIXES, "languages": LANGUAGE_EXTENSIONS, "names": NAMES}, sort_keys=True).encode()).hexdigest()
+    digest = hashlib.sha256(json.dumps({"directories": sorted(directories), "patterns": sorted(patterns), "inventory_policy": "all-files-v2", "classification_revision":3, "data_directories":sorted(DATA_DIRECTORIES), "generated_suffixes":GENERATED_SUFFIXES, "languages": LANGUAGE_EXTENSIONS, "names": NAMES}, sort_keys=True).encode()).hexdigest()
     return directories, patterns, digest
 
 
@@ -65,3 +65,12 @@ def blob_fingerprint(blob_sha):
 def content_fingerprint(data):
     blob = hashlib.sha1(b"blob " + str(len(data)).encode() + b"\0" + data).hexdigest()
     return blob_fingerprint(blob)
+
+
+def file_fingerprint(path):
+    """Fingerprint large non-parsed files without loading their bodies in RAM."""
+    digest=hashlib.sha1(b"blob "+str(path.stat().st_size).encode()+b"\0")
+    with path.open('rb') as stream:
+        while chunk:=stream.read(1024*1024):
+            digest.update(chunk)
+    return blob_fingerprint(digest.hexdigest())

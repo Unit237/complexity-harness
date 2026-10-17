@@ -33,6 +33,7 @@ class FileMetric:
 
     metric_family: str = "control_flow"
     structural: dict[str, Any] = field(default_factory=dict)
+    structure_branches: tuple[BranchEvidence, ...] = ()
 
     @property
     def max_cyclomatic(self) -> int:

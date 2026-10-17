@@ -16,17 +16,18 @@ from .complexity_languages import classify_path
 from .complexity_evidence import unpack, unpack_file, MAX_RECEIPT_BYTES, MAX_EXPANDED_BYTES, MAX_FILE_EVIDENCE_BYTES
 
 
-VERSION = "complexity-burden-v4"
-ANALYZER = "polyglot-cst-v3/libcst-1.9.0/pack-0.13.0/ts-0.25.2"
+VERSION = "complexity-burden-v5"
+ANALYZER = "polyglot-v4/libcst-1.9.0/babel-7.29.8/v8-0.14.1/dart-0.1.0/css-1.5.1/openstep-2.0.3/pack-0.13.0/ts-0.25.2"
 # This is the admission contract, not a claim that every available grammar has
 # a validated complexity adapter. Native parser dependencies stay in producers.
-CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua"}
-STRUCTURAL_LANGUAGES = {"hcl", "sql", "css", "json", "yaml", "html", "dockerfile", "make", "toml", "xml", "graphql"}
+CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "c_header", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua"}
+STRUCTURAL_LANGUAGES = {"hcl", "sql", "css", "json", "yaml", "html", "dockerfile", "make", "toml", "xml", "graphql", "cmake", "protobuf", "config", "properties", "openstep"}
+MIXED_LANGUAGES = {"html"}
 MAX_SOURCE_FILES = 200000
 MAX_INVENTORY_FILES = 250000
 MAX_FUNCTIONS_PER_FILE = 100000
 MAX_INVESTIGATION_EXAMPLES = 1000
-MAX_SOURCE_BYTES = 512 * 1024
+MAX_SOURCE_BYTES = 8 * 1024 * 1024
 POLICY = {
     "version": VERSION,
     "analyzer": ANALYZER,
@@ -137,7 +138,7 @@ def measure_snapshot(snapshot):
         if entry.get("kind") != "excluded" and (entry.get("kind") != classification["kind"] or entry.get("language") != classification["language"]):
             raise ValueError("File classification must match the versioned inventory policy")
         inventory_by_path[path] = entry
-    expected = {p for p,e in inventory_by_path.items() if e["kind"] in {"source","unknown","opaque"}}
+    expected = {p for p,e in inventory_by_path.items() if e["kind"] in {"source","unknown"}}
     if expected != seen | {row.get("path") for row in rows}:
         raise ValueError("Every eligible file must be accounted for in the full inventory")
     if any(inventory_by_path[p]["sha256"] != unknown_hashes[p] for p in unknown):
@@ -152,7 +153,7 @@ def measure_snapshot(snapshot):
     factors, language_counts = {}, {}
     for entry in inventory:
         if entry["path"] in expected:
-            language_counts.setdefault(entry["language"], {"language":entry["language"],"eligible_files":0,"analyzed_files":0,"support":"unsupported", "metric_family":"control_flow" if entry["language"] in CONTROL_LANGUAGES else "structure" if entry["language"] in STRUCTURAL_LANGUAGES else "unknown"})["eligible_files"] += 1
+            language_counts.setdefault(entry["language"], {"language":entry["language"],"eligible_files":0,"analyzed_files":0,"support":"unsupported", "metric_family":"mixed" if entry["language"] in MIXED_LANGUAGES else "control_flow" if entry["language"] in CONTROL_LANGUAGES else "structure" if entry["language"] in STRUCTURAL_LANGUAGES else "unknown"})["eligible_files"] += 1
     errors, error_reasons = [], {}
     for encoded_row in rows:
         row = unpack_file(encoded_row)
@@ -166,10 +167,16 @@ def measure_snapshot(snapshot):
             errors.append(path)
             error_reasons[path] = str(row["parse_error"])[:300]
             continue
-        family = "structure" if row["language"] in STRUCTURAL_LANGUAGES else "control_flow"
+        family = row.get("metric_family") if row["language"] in MIXED_LANGUAGES else "structure" if row["language"] in STRUCTURAL_LANGUAGES else "control_flow"
+        if family not in {"control_flow","structure"}:
+            raise ValueError("A measured file must declare its metric family")
         if row.get("metric_family","control_flow") != family:
             raise ValueError("A language must use its declared metric family")
         language_counts[row["language"]]["analyzed_files"] += 1
+        if row["language"] in MIXED_LANGUAGES:
+            language_counts[row["language"]]["metric_family"] = "mixed"
+            language_counts[row["language"]].setdefault("diagnostic_only_files",0)
+            language_counts[row["language"]]["diagnostic_only_files"] += family=="structure"
         language_counts[row["language"]]["support"] = "measured"
         outside = row.get("unattributed_branches")
         if (not isinstance(outside, (list, tuple)) or len(outside) > 100000
@@ -223,6 +230,19 @@ def measure_snapshot(snapshot):
         factor["values"].update(local)
         factor["decisions"] += sum((v-1)*n for v,n in local.items())
         factor["files"] += 1
+        structure_branches = row.get("structure_branches", [])
+        if structure_branches:
+            if row["language"] not in MIXED_LANGUAGES or family!="control_flow" or not isinstance(structure_branches,(list,tuple)) or len(structure_branches)>100000:
+                raise ValueError("Embedded structure evidence must belong to a mixed source file")
+            points=0
+            for branch in structure_branches:
+                if type(branch.get("line")) is not int or not 1<=branch["line"]<=row["lines"] or type(branch.get("contribution")) is not int or branch["contribution"]<1 or branch.get("kind") not in {"nesting-excess","fanout-excess"}:
+                    raise ValueError("Embedded structure evidence must reconstruct from valid source branches")
+                points+=branch["contribution"]
+            structural_factor=factors.setdefault("structure",{"values":Counter(),"decisions":0,"files":0})
+            structural_factor["values"][points+1]+=1
+            structural_factor["decisions"]+=points
+            structural_factor["files"]+=1
         files.append({"path": path, "sha256": row["sha256"], "lines": row.get("lines", 0),
             "language":row["language"],"metric_family":family,"structural":row.get("structural",{}),
             "functions": sum(local.values()), "decisions": sum((v-1)*n for v,n in local.items()),
@@ -241,7 +261,7 @@ def measure_snapshot(snapshot):
     eligible = len(seen)
     scored_files = sum(file["metric_family"] == "control_flow" for file in files)
     diagnostic_files = len(files) - scored_files
-    score_eligible_files = sum(row["eligible_files"] for row in language_counts.values() if row["metric_family"] != "structure")
+    score_eligible_files = sum(row["eligible_files"]-row.get("diagnostic_only_files",0) for row in language_counts.values() if row["metric_family"] != "structure")
     return {"version": VERSION, "analyzer": ANALYZER, "source_sha": source["commit"],
         "scope_hash": coverage["scope_hash"], "score": score, "level": level(score),
         "coverage": {"eligible_files": eligible, "analyzed_files": len(files),
@@ -254,7 +274,7 @@ def measure_snapshot(snapshot):
             "languages":sorted(language_counts.values(),key=lambda row:row["language"]),
             "inventory_files":len(inventory),"inventory_counts":{kind:sum(e["kind"]==kind for e in inventory) for kind in sorted({e["kind"] for e in inventory})},
             "unmeasured": [{"path":p,"language":inventory_by_path[p]["language"],"reason":error_reasons.get(p) or inventory_by_path[p].get("reason") or "Parser or dialect unavailable"} for p in unknown+errors],
-            "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated","data"})).encode()).hexdigest()},
+            "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated","data","opaque"})).encode()).hexdigest()},
         "factors":factors,
         "summary": {"functions": sum(values.values()), "decisions": sum(file["decisions"] for file in files if file["metric_family"] == "control_flow"),
             "hotspots": sum(n for v,n in values.items() if v>=15), "very_high": sum(n for v,n in values.items() if v>=40),
