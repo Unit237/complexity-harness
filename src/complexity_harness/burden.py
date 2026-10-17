@@ -37,7 +37,7 @@ POLICY = {
     "formula": "100 × (0.6 × mean function load + 0.4 × mean highest-decile load); function load = min((cyclomatic − 1) / 24, 1)",
     "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score.",
     "meaning": "Measured code burden, 0–100, higher is worse. Control flow and declarative structure are separate factors; the highest factor determines repository burden. Unsupported source stays unknown.",
-    "reduction_audit": "Counts recognized decisions in every function, closure and module. Declarative structure uses excess nesting and fan-out, not cyclomatic complexity. Every factor must stay level or improve; changed unknown or excluded source blocks credit.",
+    "reduction_audit": "Counts recognized decisions in every function, closure and module. Declarative structure uses excess nesting and fan-out, not cyclomatic complexity. Every factor must stay level or improve; changed unknown, data or excluded source blocks credit.",
     "structural_formula": "Per document: one point for each container level beyond 3, plus each child container beyond 8. Flat scalar declarations do not add fan-out. Normalize with the same 24-point ceiling; aggregate each metric family separately and take the highest factor.",
     "reduction_requires": ["comparable_complete_scan", "fewer_decisions", "exact_revision_behavior_checks", "merged_source"],
 }
@@ -207,7 +207,7 @@ def measure_snapshot(snapshot):
             "languages":sorted(language_counts.values(),key=lambda row:row["language"]),
             "inventory_files":len(inventory),"inventory_counts":{kind:sum(e["kind"]==kind for e in inventory) for kind in sorted({e["kind"] for e in inventory})},
             "unmeasured": [{"path":p,"language":inventory_by_path[p]["language"],"reason":error_reasons.get(p) or inventory_by_path[p].get("reason") or "Parser or dialect unavailable"} for p in unknown+errors],
-            "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated"})).encode()).hexdigest()},
+            "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated","data"})).encode()).hexdigest()},
         "factors":factors,
         "summary": {"functions": len(values), "decisions": sum(file["decisions"] for file in files),
             "hotspots": sum(v >= 15 for v in values), "very_high": sum(v >= 40 for v in values),
@@ -224,7 +224,7 @@ def reduction_evidence(before, after):
     if before["coverage"]["parse_error_paths"] or after["coverage"]["parse_error_paths"]:
         reasons.append("Source parse errors prevent a comparable reduction")
     if before["coverage"].get("excluded_fingerprint") != after["coverage"].get("excluded_fingerprint"):
-        reasons.append("Changed excluded or generated source prevents a comparable reduction")
+        reasons.append("Changed excluded, generated or recorded data prevents a comparable reduction")
     if before["coverage"].get("measured_languages") != after["coverage"].get("measured_languages"):
         reasons.append("Language coverage changed; establish a comparable baseline before credit")
     if any(after.get("factors",{}).get(family,{}).get("decisions",0) > before.get("factors",{}).get(family,{}).get("decisions",0) for family in set(before.get("factors",{})) | set(after.get("factors",{}))):

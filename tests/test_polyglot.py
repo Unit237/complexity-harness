@@ -155,3 +155,19 @@ def test_switch_boolean_and_loop_constructs_cannot_disappear_from_native_evidenc
  metric=analyze_bytes(source.encode(),relative_path=PROGRAMS[language][0],language=language)
  assert not metric.parse_error
  assert sum(f.cyclomatic-1 for f in metric.functions)==decisions
+
+
+def test_reports_and_recorded_fixtures_are_classified_and_protected_without_becoming_hotspots(tmp_path):
+ (tmp_path/'app.mjs').write_text('function choose(x,y) { if(x) return 1; if(y) return 2; return 0; }')
+ (tmp_path/'artifacts').mkdir();report=tmp_path/'artifacts/report.json'
+ report.write_text('{"a":{"b":{"c":{"d":{"e":{}}}}}}')
+ (tmp_path/'app.g.dart').write_text('Generated source')
+ before=_measured(tmp_path,'a')
+ assert before['coverage']['eligible_files']==1
+ assert before['coverage']['inventory_counts']['data']==1
+ assert before['coverage']['inventory_counts']['generated']==1
+ assert all(f['metric_family']=='control_flow' for f in before['files'])
+ (tmp_path/'app.mjs').write_text('function choose(x) { if(x) return 1; return 0; }')
+ assert reduction_evidence(before,_measured(tmp_path,'b'))['comparable']
+ report.write_text('{}')
+ assert not reduction_evidence(before,_measured(tmp_path,'b'))['comparable']

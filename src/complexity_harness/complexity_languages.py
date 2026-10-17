@@ -34,12 +34,20 @@ NAMES = {'Dockerfile':'dockerfile', 'Containerfile':'dockerfile', 'Makefile':'ma
          'Podfile':'ruby', 'Brewfile':'ruby', 'CMakeLists.txt':'cmake', 'Jenkinsfile':'groovy'}
 ASSETS = set('png jpg jpeg gif webp ico avif mp3 mp4 mov wav woff woff2 ttf otf pdf zip gz bz2 xz tar 7z jar class pyc so dylib dll exe a o bin db sqlite sqlite3 lock'.split())
 DOCS = {'.md', '.rst', '.adoc', '.txt', '.csv', '.tsv'}
+DATA_DIRECTORIES = {'artifacts','reports','test-results','fixtures','__fixtures__','__snapshots__'}
+GENERATED_SUFFIXES = ('.g.dart','.freezed.dart','.pb.go','_pb2.py','_pb2_grpc.py','.g.cs','.designer.cs')
 LOCKS = {'package-lock.json', 'yarn.lock', 'pnpm-lock.yaml', 'poetry.lock', 'uv.lock', 'Cargo.lock', 'Gemfile.lock', 'composer.lock', 'pubspec.lock', 'go.sum'}
 
 
 def classify_path(path):
     path = PurePosixPath(path)
     name, suffix = path.name, path.suffix.lower()
+    if suffix in {'.json','.jsonl','.ndjson','.har','.sarif','.xml'} and (set(path.parts[:-1]) & DATA_DIRECTORIES or path.as_posix()=='.complexity/architectural-memory.json'):
+        return {'kind':'data', 'language':None, 'reason':'Recorded report or fixture data; retained outside the source score'}
+    if name in {'.DS_Store','Thumbs.db'}:
+        return {'kind':'asset', 'language':None, 'reason':'Operating-system metadata'}
+    if name.lower().endswith(GENERATED_SUFFIXES):
+        return {'kind':'generated', 'language':None, 'reason':'Recognized generated source suffix'}
     if name in LOCKS or name.endswith('.min.js') or name.endswith('.min.css') or name.endswith('.map'):
         return {'kind':'generated', 'language':None, 'reason':'Generated or dependency lock file'}
     if name == '.env' or name.startswith('.env.') or suffix in {'.pem', '.key', '.p12', '.pfx'}:

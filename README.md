@@ -101,7 +101,7 @@ the highest repository is the product score. The contract documents the formula.
 
 The scan inventories every Git-visible file, including `.mjs`, `.cc`, shell,
 Terraform, SQL, configuration and unknown customer extensions. Documentation,
-assets, generated/lock files and exclusions are counted separately. Unknown
+assets, recorded report/fixture data, generated/lock files and exclusions are counted separately. Unknown
 languages, unsupported dialects, parse errors, mixed embedded templates,
 symlinks and oversized files remain unmeasured with content fingerprints.
 Customer source is never executed. The broker uses bundled parsers offline and
@@ -111,12 +111,14 @@ grammars are not automatically advertised as validated complexity adapters.
 
 Completed Work cannot lower the accepted score by itself. A comparable scan
 must remove load without increasing any factor, changing language coverage or
-changing unknown/generated/excluded source. The product also requires approved
+changing unknown/generated/excluded source or recorded data. The product also requires approved
 source scope, merged delivery, passing CI, and durable behavior-test receipts on
 the exact measured revision. A parser/analysis upgrade creates a labeled new
 baseline, retains old receipts, and awards no reduction or Work credit.
 
 See `tests/test_polyglot.py` for the adapter corpus and customer inventory cases.
+Bump both the measurement generation and analyzer identity when releasing a
+changed parser/runtime, adapter registry, classification or scoring policy.
 
 ## Read a finding in context
 

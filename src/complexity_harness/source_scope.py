@@ -3,7 +3,7 @@ from fnmatch import fnmatch
 import hashlib
 import json
 from pathlib import Path
-from .complexity_languages import EXTENSIONS, LANGUAGE_EXTENSIONS, NAMES
+from .complexity_languages import EXTENSIONS, LANGUAGE_EXTENSIONS, NAMES, DATA_DIRECTORIES, GENERATED_SUFFIXES
 
 SOURCE_SUFFIXES = set(EXTENSIONS)
 
@@ -54,7 +54,7 @@ def source_policy(config, exclude_patterns=()):
     configured = {str(value) for value in config.get("exclude") or []}
     directories = DEFAULT_EXCLUDE | {value for value in configured if "/" not in value and "*" not in value}
     patterns = {value for value in configured if value not in directories} | set(exclude_patterns)
-    digest = hashlib.sha256(json.dumps({"directories": sorted(directories), "patterns": sorted(patterns), "inventory_policy": "all-files-v2", "languages": LANGUAGE_EXTENSIONS, "names": NAMES}, sort_keys=True).encode()).hexdigest()
+    digest = hashlib.sha256(json.dumps({"directories": sorted(directories), "patterns": sorted(patterns), "inventory_policy": "all-files-v2", "data_directories":sorted(DATA_DIRECTORIES), "generated_suffixes":GENERATED_SUFFIXES, "languages": LANGUAGE_EXTENSIONS, "names": NAMES}, sort_keys=True).encode()).hexdigest()
     return directories, patterns, digest
 
 
