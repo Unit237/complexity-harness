@@ -16,8 +16,8 @@ from .complexity_languages import classify_path
 from .complexity_evidence import unpack, unpack_file, MAX_RECEIPT_BYTES, MAX_EXPANDED_BYTES, MAX_FILE_EVIDENCE_BYTES
 
 
-VERSION = "complexity-burden-v6"
-ANALYZER = "polyglot-v5/libcst-1.9.0/babel-7.29.8/v8-0.14.1/dart-0.1.0/css-1.5.1/openstep-2.0.3/groovy-0.3.0/kotlin-1.1.0/swift-0.7.4/batch-0.11.1/ps-0.26.4/yaml-6.0.3/sqlglot-30.23.0/abnf-2.9.0/go-asm-1.25.3/pack-0.13.0/ts-0.25.2"
+VERSION = "complexity-burden-v7"
+ANALYZER = "polyglot-v6/libcst-1.9.0/babel-7.29.8/v8-0.14.1/dart-0.1.0/css-1.5.1/openstep-2.0.3/groovy-0.3.0/kotlin-1.1.0/swift-0.7.4/batch-0.11.1/ps-0.26.4/yaml-6.0.3/sqlglot-30.23.0/abnf-2.9.0/go-asm-1.25.3/pack-0.13.0/ts-0.25.2"
 # This is the admission contract, not a claim that every available grammar has
 # a validated complexity adapter. Native parser dependencies stay in producers.
 CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "c_header", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua", "groovy", "nix", "starlark", "assembly", "batch", "gotemplate", "unknown", "nsis", "procfile", "just", "powershell"}
@@ -55,6 +55,7 @@ POLICY = {
     "anchors": [{"decisions": 0, "score": 0}, {"decisions": 5, "score": 20.83}, {"decisions": 14, "score": 58.33}, {"decisions": 24, "score": 100}],
     "reduction_audit": "Counts recognized decisions in every function, closure and module. A lower score alone is insufficient: total control-flow decisions must fall, structural diagnostic points cannot increase, and changed unknown, diagnostic-only, template-data or excluded source blocks credit.",
     "structural_formula": "Diagnostic only: record container count, maximum nesting, excess levels beyond 3 and child containers beyond 8. These are not control-flow decisions and have no calibrated 0–100 score. Document-only repositories remain unmeasured on the main complexity map.",
+    "non_executable_examples": "Explicit documentation elisions and intentionally invalid build fixtures are separately attested and fingerprinted outside source coverage. Broken runtime source stays unmeasured; reclassification is a new baseline without reduction credit.",
     "source_readers": 'Pinned native grammars and bounded static readers analyze source without executing repository code. Embedded JavaScript/TypeScript, CI scripts, shell recipes and explicit template conditions retain physical source lines. C/C++ macros are analyzed once as source fragments, not expanded at call sites. Plan 9/Go assembly uses Go 1.25.3 instruction tables and architecture-specific branch semantics.',
     "reduction_requires": ["comparable_complete_scan", "fewer_decisions", "exact_revision_behavior_checks", "merged_source"],
 }
@@ -161,7 +162,7 @@ def measure_snapshot(snapshot):
     for entry in inventory:
         if entry["path"] in expected:
             language_counts.setdefault(entry["language"], {"language":entry["language"],"eligible_files":0,"analyzed_files":0,"support":"unsupported", "metric_family":"mixed" if entry["language"] in MIXED_LANGUAGES else "control_flow" if entry["language"] in CONTROL_LANGUAGES else "structure" if entry["language"] in STRUCTURAL_LANGUAGES else "unknown"})["eligible_files"] += 1
-    errors, error_reasons = [], {}
+    errors, error_reasons, examples = [], {}, []
     for encoded_row in rows:
         row = unpack_file(encoded_row)
         path = _path(row.get("path"))
@@ -171,6 +172,15 @@ def measure_snapshot(snapshot):
         if not re.fullmatch(r"[0-9a-f]{64}", row.get("sha256") or ""):
             raise ValueError("Every measured file needs a content hash")
         if not isinstance(row.get('structural',{}),dict) or 'unsupported' in row and type(row['unsupported']) is not bool:raise ValueError('Source adapter metadata must be correctly typed')
+        if row.get('example_evidence') is not None:
+            classification=classify_path(path,example_evidence=row['example_evidence'])
+            if (classification['kind']!='example' or row.get('functions') or row.get('unattributed_branches') or row.get('structure_branches') or row.get('structural')
+                    or row.get('parse_error') or row.get('unsupported') or type(row.get('lines')) is not int or row['example_evidence']['line']>row.get('lines',0)):
+                raise ValueError('Non-executable examples cannot carry measured code or parse-error status')
+            inventory_by_path[path]={**inventory_by_path[path],**classification,'example_evidence':row['example_evidence']}
+            examples.append({'path':path,'language':row['language'],'reason':classification['reason'],'evidence_line':row['example_evidence']['line']})
+            language_counts[row['language']]['eligible_files']-=1
+            continue
         if row.get('unsupported'):
             if row['language']!='unknown' or row.get('functions') or row.get('unattributed_branches') or row.get('parse_error')!='Unrecognized source format; no score assigned':
                 raise ValueError('Only unidentified source may use content-detection unsupported status')
@@ -271,7 +281,8 @@ def measure_snapshot(snapshot):
     files.sort(key=lambda row:row["path"])
     errors.sort()
     unknown.sort()
-    eligible = len(seen)
+    eligible = len(seen)-len(examples)
+    inventory=list(inventory_by_path.values())
     scored_files = sum(file["metric_family"] == "control_flow" for file in files)
     diagnostic_files = len(files) - scored_files
     score_eligible_files = sum(row["eligible_files"]-row.get("diagnostic_only_files",0) for row in language_counts.values() if row["metric_family"] != "structure")
@@ -282,7 +293,7 @@ def measure_snapshot(snapshot):
         if fingerprint is not None:
             if file['language'] not in {'gotemplate','yaml','c','cpp','c_header','assembly'} or not isinstance(fingerprint,str) or not re.fullmatch(r'[0-9a-f]{64}',fingerprint):raise ValueError('Unscored literal fingerprints must use the versioned source adapter')
             literals.append((file['path'],fingerprint))
-    protected=sorted((p,e['sha256']) for p,e in inventory_by_path.items() if e['kind'] in {'excluded','generated','data','opaque'} or p in diagnostic_paths)
+    protected=sorted((p,e['sha256']) for p,e in inventory_by_path.items() if e['kind'] in {'excluded','generated','data','opaque','example'} or p in diagnostic_paths)
     return {"version": VERSION, "analyzer": ANALYZER, "source_sha": source["commit"],
         "scope_hash": coverage["scope_hash"], "score": score, "level": level(score),
         "coverage": {"eligible_files": eligible, "analyzed_files": len(files),
@@ -292,7 +303,8 @@ def measure_snapshot(snapshot):
             "percent": coverage_percent(len(files),eligible) if eligible else 0,
             "complete": bool(eligible) and not unknown and not errors,
             "measured_languages": sorted({row["language"] for row in files}),
-            "languages":sorted(language_counts.values(),key=lambda row:row["language"]),
+            "languages":sorted((row for row in language_counts.values() if row['eligible_files']),key=lambda row:row["language"]),
+            "non_executable_examples":sorted(examples,key=lambda row:row['path']),
             "inventory_files":len(inventory),"inventory_counts":{kind:sum(e["kind"]==kind for e in inventory) for kind in sorted({e["kind"] for e in inventory})},
             "unmeasured": [{"path":p,"language":inventory_by_path[p]["language"],"reason":error_reasons.get(p) or inventory_by_path[p].get("reason") or "Parser or dialect unavailable"} for p in unknown+errors],
             "excluded_fingerprint":hashlib.sha256(json.dumps([protected,sorted(literals)]).encode()).hexdigest()},

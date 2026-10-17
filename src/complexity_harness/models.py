@@ -35,6 +35,7 @@ class FileMetric:
     structural: dict[str, Any] = field(default_factory=dict)
     structure_branches: tuple[BranchEvidence, ...] = ()
     unsupported: bool = False
+    example_evidence: dict[str, Any] | None = None
 
     @property
     def max_cyclomatic(self) -> int:

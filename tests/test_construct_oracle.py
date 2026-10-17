@@ -20,7 +20,7 @@ def test_versioned_calibration_disclosure_is_bound_to_the_measured_corpus():
  from complexity_harness.burden import ANALYZER, VERSION
  import hashlib
  root=Path(__file__).parents[1]
- report=json.loads((root/"benchmarks/calibration-v4.json").read_text())
+ report=json.loads((root/"benchmarks/calibration-v5.json").read_text())
  manifest=json.loads((root/"benchmarks/repositories-v1.json").read_text())
  assert report["measurement_version"]==VERSION and report["analyzer"]==ANALYZER
  assert report["summary"]["construct_cases"]==len(CASES)+report["summary"]["modern_python_cases"]+report["summary"]["customer_syntax_cases"]==len(CASES)+6+sum(len(json.loads(p.read_text())) for p in (root/"benchmarks").glob("customer-syntax-v*.json"))

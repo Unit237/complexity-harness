@@ -29,7 +29,7 @@ def main():
             result.update(score=row['score'],before_score=previous.get(row['repository'],{}).get('score'),
                 inventory_files=coverage['inventory_files'],eligible_files=coverage['eligible_files'],analyzed_files=coverage['analyzed_files'],
                 scored_files=coverage['scored_files'],diagnostic_files=coverage['diagnostic_files'],score_coverage_percent=coverage['score_percent'],
-                parse_error_files=len(coverage['parse_error_paths']),unsupported_files=len(coverage['unsupported_paths']),
+                example_files=coverage['inventory_counts'].get('example',0),parse_error_files=len(coverage['parse_error_paths']),unsupported_files=len(coverage['unsupported_paths']),
                 programming_units=measured['summary']['functions'],hotspots=measured['summary']['hotspots'])
         rows.append(result)
     benchmark=Path(__file__).parent
@@ -39,7 +39,7 @@ def main():
     syntax=benchmark/'customer-syntax-v1.json'
     syntax_new=benchmark/'customer-syntax-v2.json'
     syntax_cases=json.loads(syntax.read_text())+json.loads(syntax_new.read_text())
-    result={'schema_version':'complexity-calibration-v4','measurement_version':VERSION,'analyzer':ANALYZER,'evaluated_on':'2026-10-17',
+    result={'schema_version':'complexity-calibration-v5','measurement_version':VERSION,'analyzer':ANALYZER,'evaluated_on':'2026-10-17',
         'source':'Pinned public repositories used as customer stand-ins; no private customer repositories or repository code execution.',
         'method':'Reference anchors and monotonicity checks, construct oracles, corpus coverage, and an independent analyzer comparison. This is not a statistical prediction of engineering difficulty.',
         'summary':{'repositories':len(rows),'scored_repositories':sum(r['status']=='measured' for r in rows),

@@ -159,3 +159,43 @@ def test_unrecognized_angular_expression_dialects_fail_closed():
         source=f'<div ng-app="app" ng-click="{expression}">Go</div>'
         metric=analyze_bytes(source.encode(),relative_path='page.html',language='html')
         assert metric.parse_error and not metric.functions
+
+
+def test_explicit_non_executable_examples_are_accounted_for_without_hiding_broken_runtime_source(tmp_path):
+    (tmp_path/'docs').mkdir();(tmp_path/'tests').mkdir()
+    (tmp_path/'docs/Dockerfile.fragment').write_text('FROM alpine\n...\n')
+    (tmp_path/'tests/Dockerfile.failure').write_text('FROM alpine\n# intended to cause failure for test case\nRUN\n')
+    (tmp_path/'Dockerfile').write_text('FROM alpine\nRUN\n')
+    (tmp_path/'main.py').write_text('def f(x):\n if x: return 1\n return 0\n')
+    value=measure(tmp_path,'a')
+    assert value['coverage']['inventory_files']==4
+    assert value['coverage']['inventory_counts']['example']==2
+    assert value['coverage']['eligible_files']==2 and value['coverage']['analyzed_files']==1
+    assert value['coverage']['parse_error_paths']==['Dockerfile']
+    assert {r['path'] for r in value['coverage']['non_executable_examples']}=={'docs/Dockerfile.fragment','tests/Dockerfile.failure'}
+    # The same malformed source in a test directory needs an explicit intent marker.
+    (tmp_path/'tests/Dockerfile.failure').write_text('FROM alpine\nRUN\n')
+    assert 'tests/Dockerfile.failure' in measure(tmp_path,'b')['coverage']['parse_error_paths']
+
+
+def test_examples_remain_fingerprinted_and_reclassification_cannot_earn_reduction_credit(tmp_path):
+    (tmp_path/'docs').mkdir()
+    (tmp_path/'main.py').write_text('def f(x):\n if x: return 1\n return 0\n')
+    (tmp_path/'docs/Dockerfile').write_text('FROM alpine\n...\n')
+    before=measure(tmp_path,'a')
+    (tmp_path/'main.py').write_text('def f(x):\n return 0\n')
+    assert reduction_evidence(before,measure(tmp_path,'b'))['comparable']
+    (tmp_path/'docs/Dockerfile').write_text('FROM alpine\n...\n# changed example\n')
+    assert not reduction_evidence(before,measure(tmp_path,'b'))['comparable']
+    (tmp_path/'docs/Dockerfile').write_text('FROM alpine\nRUN if test x; then echo y; fi\n')
+    source=measure(tmp_path,'c')
+    (tmp_path/'docs/Dockerfile').write_text('FROM alpine\n...\n')
+    assert not reduction_evidence(source,measure(tmp_path,'d'))['comparable']
+
+
+def test_producer_example_attestations_cannot_reclassify_runtime_paths(tmp_path):
+    (tmp_path/'Dockerfile').write_text('FROM alpine\nRUN\n')
+    raw=scan_repository(tmp_path).as_dict();raw['repository'].update(commit='a'*40,clean=True)
+    row=raw['files'][0];row.update(parse_error=None,example_evidence={'rule':'documentation_elision','line':1})
+    with pytest.raises(ValueError,match='context-bound'):
+        measure_snapshot(raw)

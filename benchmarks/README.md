@@ -7,7 +7,7 @@ Commit and archive SHA-256 pins live in `repositories-v1.json`.
 
 ## Meaning and verification
 
-`complexity-burden-v6` measures explicit source decisions, not engineering time,
+`complexity-burden-v7` measures explicit source decisions, not engineering time,
 defect probabilities or universal maintainability. A unit with 0, 5, 14 or 24
 decisions has load 0, 20.83, 58.33 or 100. A repository combines 60% mean load
 and 40% highest-decile mean load. The product uses its highest repository score.
@@ -40,30 +40,30 @@ checks and CI on the exact merged revision before it can lower the accepted scor
 
 All 20 archives complete: 19 scored and 1 diagnostic-only, with 15,602 analyzed files and 167,690 programming units. The cohorts were selected before execution, but results were inspected; there is no blind performance claim.
 
-The large Skaffold sample improves from 95.43% to 99.97% scored-source coverage. All valid files behind its gaps are analyzed. Three incomplete Dockerfile examples remain unmeasured: two use `...` and one contains an empty `RUN`. This is not a claim that every future language, dialect or malformed customer file is supported.
+The large Skaffold sample now has 100% executable-source coverage (12,065/12,065 files). Its three deliberately incomplete Dockerfiles are separately attested examples: two documentation elisions and one intentionally invalid build fixture. Their source fingerprints remain protected. This is not a claim that every future language, dialect or malformed customer file is supported.
 
-| Repository | Role | v5 | v6 | Scored source coverage | Parse failures | Unsupported |
-|---|---|---:|---:|---:|---:|---:|
-| [psf/requests](https://github.com/psf/requests/tree/0e322af87745eff34caffe4df68456ebc20d9068) | python | 14.07 | 14.67 | 93.48% | 0 | 3 |
-| [expressjs/express](https://github.com/expressjs/express/tree/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4) | javascript | 3.15 | 3.18 | 81.92% | 8 | 24 |
-| [vuejs/core](https://github.com/vuejs/core/tree/6eb29d345aa73746207f80c89ee8b37ff7b949c9) | typescript/tsx | 13.04 | 12.97 | 99.29% | 0 | 4 |
-| [go-chi/chi](https://github.com/go-chi/chi/tree/0a20a0e3400e551803f463d17a0ab84ee8afef3c) | go | 13.28 | 13.28 | 100.0% | 0 | 0 |
-| [DapperLib/Dapper](https://github.com/DapperLib/Dapper/tree/bd4f75b512de3e00f2c2631d5309961a1ecfea23) | csharp | 6.52 | 9.35 | 100.0% | 0 | 0 |
-| [spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic/tree/500158f732419217507c7656904b8e6aa1bcc0d6) | java | 7.71 | 11.59 | 91.94% | 3 | 4 |
-| [sinatra/sinatra](https://github.com/sinatra/sinatra/tree/7b50a1bbb5324838908dfaa00ec53ad322673a29) | ruby | 4.0 | 4.27 | 66.15% | 0 | 87 |
-| [slimphp/Slim](https://github.com/slimphp/Slim/tree/5943393b88716eb9e82c4161caa956af63423913) | php | 10.66 | 10.66 | 100.0% | 0 | 0 |
-| [tokio-rs/axum](https://github.com/tokio-rs/axum/tree/c59208c86fded335cd85e388030ad59347b0e5ae) | rust | 7.88 | 7.88 | 98.38% | 1 | 4 |
-| [dart-lang/shelf](https://github.com/dart-lang/shelf/tree/2536c15a562cb183dabbc628824a215663830325) | dart | 18.96 | 20.08 | 100.0% | 0 | 0 |
-| [Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization/tree/f9f160a680da9f92c3bb121ae3644c96e57ba42e) | kotlin | 5.07 | 5.81 | 100.0% | 127 | 0 |
-| [apple/swift-http-types](https://github.com/apple/swift-http-types/tree/ef18d829e8b92d731ad27bb81583edd2094d1ce3) | swift | 17.87 | 16.75 | 100.0% | 0 | 0 |
-| [libuv/libuv](https://github.com/libuv/libuv/tree/8fb9cb919489a48880680a56efecff6a7dfb4504) | c | 23.7 | 23.86 | 80.26% | 66 | 9 |
-| [fmtlib/fmt](https://github.com/fmtlib/fmt/tree/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2) | cpp | 19.07 | 19.83 | 53.76% | 38 | 5 |
-| [lunarmodules/busted](https://github.com/lunarmodules/busted/tree/02f31a9c103a44e166617cfdb6ba1b8994a9c912) | lua | 10.47 | 10.59 | 86.89% | 1 | 15 |
-| [bats-core/bats-core](https://github.com/bats-core/bats-core/tree/b640ec3cf2c7c9cfc9e6351479261186f76eeec8) | bash | 18.88 | 25.47 | 23.39% | 4 | 222 |
-| [terraform-aws-modules/terraform-aws-vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc/tree/961c9b51e3ed3959d9419f019e7085c087bf7297) | hcl | diagnostic only | 7.08 | 100.0% | 0 | 0 |
-| [dbt-labs/jaffle-shop](https://github.com/dbt-labs/jaffle-shop/tree/5beb145b00f5465ec759cfcdd9745e858818cf95) | sql/jinja | 11.67 | 11.67 | 50.0% | 15 | 1 |
-| [necolas/normalize.css](https://github.com/necolas/normalize.css/tree/fc091cce1534909334c1911709a39c22d406977b) | css | diagnostic only | diagnostic only | 0.0% | 1 | 0 |
-| [GoogleContainerTools/skaffold](https://github.com/GoogleContainerTools/skaffold/tree/f132ab25adf1599c7fbdce733144991126565386) | yaml/json | 21.66 | 21.6 | 99.97% | 3 | 0 |
+| Repository | Role | v6 | v7 | Scored source coverage | Examples | Parse failures | Unsupported |
+|---|---|---:|---:|---:|---:|---:|---:|
+| [psf/requests](https://github.com/psf/requests/tree/0e322af87745eff34caffe4df68456ebc20d9068) | python | 14.67 | 14.67 | 93.48% | 0 | 0 | 3 |
+| [expressjs/express](https://github.com/expressjs/express/tree/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4) | javascript | 3.18 | 3.18 | 81.92% | 0 | 8 | 24 |
+| [vuejs/core](https://github.com/vuejs/core/tree/6eb29d345aa73746207f80c89ee8b37ff7b949c9) | typescript/tsx | 12.97 | 12.97 | 99.29% | 0 | 0 | 4 |
+| [go-chi/chi](https://github.com/go-chi/chi/tree/0a20a0e3400e551803f463d17a0ab84ee8afef3c) | go | 13.28 | 13.28 | 100.0% | 0 | 0 | 0 |
+| [DapperLib/Dapper](https://github.com/DapperLib/Dapper/tree/bd4f75b512de3e00f2c2631d5309961a1ecfea23) | csharp | 9.35 | 9.35 | 100.0% | 0 | 0 | 0 |
+| [spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic/tree/500158f732419217507c7656904b8e6aa1bcc0d6) | java | 11.59 | 11.59 | 91.94% | 0 | 3 | 4 |
+| [sinatra/sinatra](https://github.com/sinatra/sinatra/tree/7b50a1bbb5324838908dfaa00ec53ad322673a29) | ruby | 4.27 | 4.27 | 66.15% | 0 | 0 | 87 |
+| [slimphp/Slim](https://github.com/slimphp/Slim/tree/5943393b88716eb9e82c4161caa956af63423913) | php | 10.66 | 10.66 | 100.0% | 0 | 0 | 0 |
+| [tokio-rs/axum](https://github.com/tokio-rs/axum/tree/c59208c86fded335cd85e388030ad59347b0e5ae) | rust | 7.88 | 7.88 | 98.38% | 0 | 1 | 4 |
+| [dart-lang/shelf](https://github.com/dart-lang/shelf/tree/2536c15a562cb183dabbc628824a215663830325) | dart | 20.08 | 20.08 | 100.0% | 0 | 0 | 0 |
+| [Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization/tree/f9f160a680da9f92c3bb121ae3644c96e57ba42e) | kotlin | 5.81 | 5.81 | 100.0% | 0 | 127 | 0 |
+| [apple/swift-http-types](https://github.com/apple/swift-http-types/tree/ef18d829e8b92d731ad27bb81583edd2094d1ce3) | swift | 16.75 | 16.75 | 100.0% | 0 | 0 | 0 |
+| [libuv/libuv](https://github.com/libuv/libuv/tree/8fb9cb919489a48880680a56efecff6a7dfb4504) | c | 23.86 | 23.86 | 80.26% | 0 | 66 | 9 |
+| [fmtlib/fmt](https://github.com/fmtlib/fmt/tree/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2) | cpp | 19.83 | 19.83 | 53.76% | 0 | 38 | 5 |
+| [lunarmodules/busted](https://github.com/lunarmodules/busted/tree/02f31a9c103a44e166617cfdb6ba1b8994a9c912) | lua | 10.59 | 10.59 | 86.89% | 0 | 1 | 15 |
+| [bats-core/bats-core](https://github.com/bats-core/bats-core/tree/b640ec3cf2c7c9cfc9e6351479261186f76eeec8) | bash | 25.47 | 25.47 | 23.39% | 0 | 4 | 222 |
+| [terraform-aws-modules/terraform-aws-vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc/tree/961c9b51e3ed3959d9419f019e7085c087bf7297) | hcl | 7.08 | 7.08 | 100.0% | 0 | 0 | 0 |
+| [dbt-labs/jaffle-shop](https://github.com/dbt-labs/jaffle-shop/tree/5beb145b00f5465ec759cfcdd9745e858818cf95) | sql/jinja | 11.67 | 11.67 | 50.0% | 0 | 15 | 1 |
+| [necolas/normalize.css](https://github.com/necolas/normalize.css/tree/fc091cce1534909334c1911709a39c22d406977b) | css | diagnostic only | diagnostic only | 0.0% | 0 | 1 | 0 |
+| [GoogleContainerTools/skaffold](https://github.com/GoogleContainerTools/skaffold/tree/f132ab25adf1599c7fbdce733144991126565386) | yaml/json | 21.6 | 21.6 | 100.0% | 3 | 0 | 0 |
 
 ## Reproduce
 
@@ -72,14 +72,14 @@ Install `.[dev]` in an isolated environment, then run:
 ```sh
 python -m pytest
 python benchmarks/run.py --cache /absolute/cache --output /absolute/results
-python benchmarks/summarize.py --report /absolute/results/report.json --before /absolute/v5/report.json --output benchmarks/calibration-v4.json
+python benchmarks/summarize.py --report /absolute/results/report.json --before /absolute/v6/report.json --output benchmarks/calibration-v5.json
 ```
 
 The independent analyzer is a dev dependency. `--write-digests` is only for
 pinning a new manifest; ordinary runs reject archive digest changes. Validation
 archives have a 128 MiB compressed and 512 MiB expanded bound. Native ingestion
 retains its stricter transport limits. Full receipts stay in local acceptance
-evidence; compact results and hashes are committed in `calibration-v4.json`.
+evidence; compact results and hashes are committed in `calibration-v5.json`.
 
 Methodology references: [Lizard](https://github.com/terryyin/lizard) and
 [Sonar complexity definitions](https://docs.sonarsource.com/sonarqube-server/2025.1/user-guide/code-metrics/metrics-definition).

@@ -34,11 +34,11 @@
           "note": "Real format cases prove source lines and explicit decisions; unsupported dialects stay unmeasured."
         },
         {
-          "path": "benchmarks/calibration-v4.json",
+          "path": "benchmarks/calibration-v5.json",
           "note": "Pinned public stand-ins disclose remaining gaps and finite capacity; they do not prove universal language support or engineering outcomes."
         }
       ],
-      "decision": "Add validated readers at the shared producer boundary, retain all file accounting, and label analysis upgrades as baselines without Work credit. Never hide unsupported syntax to reach 100 percent.",
+      "decision": "Add validated readers at the shared producer boundary, retain all file accounting, and label analysis upgrades as baselines without Work credit. Explicit non-executable examples require context-bound source evidence and protected fingerprints. Ordinary invalid source remains unknown; never hide unsupported syntax to reach 100 percent.",
       "next_trigger": "Any new dialect, parser update, classification change, coverage rounding change or code-to-data displacement path."
     }
   ]

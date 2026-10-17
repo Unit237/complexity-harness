@@ -73,6 +73,10 @@ def analyze_bytes(data, *, relative_path, language, _macro_depth=0):
     family = 'structure' if language in STRUCTURAL_LANGUAGES else 'control_flow'
     base = dict(path=relative_path, language=language, sha256=hashlib.sha256(data).hexdigest(),
                 lines=len(data.splitlines()), metric_family=family)
+    if language=='dockerfile':
+        from .complexity_languages import classify_content
+        example=classify_content(relative_path,data).get('example_evidence')
+        if example:return FileMetric(**base,example_evidence=example)
     if language not in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES:
         return FileMetric(**base, parse_error='No validated complexity adapter')
     if language=='assembly':

@@ -91,7 +91,7 @@ Configuration is optional at `.complexity/config.json`:
 complexity-harness burden /tmp/before.json
 ```
 
-`complexity-burden-v6` maps explicit control-flow decisions onto 0–100;
+`complexity-burden-v7` maps explicit control-flow decisions onto 0–100;
 higher is worse. A unit with 0 / 5 / 14 / 24 decisions has a fixed load of
 0 / 20.83 / 58.33 / 100. The repository combines 60% mean load with 40% mean
 highest-decile load; the highest repository sets the product score. These are
@@ -111,7 +111,7 @@ repositories are customer stand-ins, not actual customer outcome validation.
 
 The scan inventories every Git-visible file, including `.mjs`, `.cc`, shell,
 Terraform, SQL, configuration and unknown customer extensions. Documentation,
-assets, recorded report/fixture data, generated/lock files and exclusions are counted separately. Unknown
+assets, recorded report/fixture data, generated/lock files and exclusions are counted separately. Explicit documentation elisions and intentionally invalid Docker build fixtures are separately attested, fingerprinted examples outside executable-source coverage. Ordinary broken source remains unmeasured. Unknown
 languages, unsupported dialects, parse errors, unsupported embedded template dialects,
 symlinks and oversized files remain unmeasured with content fingerprints.
 Customer source is never executed. The broker uses bundled parsers offline and
