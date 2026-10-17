@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "complexity-harness"
-version = "0.3.0"
+version = "0.4.0"
 description = "Inventory-aware complexity snapshots, architectural memory, and bounded refactor jobs"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -31,6 +31,7 @@ dev = [
   "build>=1.2",
   "jsonschema>=4.23",
   "pytest>=8",
+  "lizard==1.24.1",
 ]
 
 [project.urls]

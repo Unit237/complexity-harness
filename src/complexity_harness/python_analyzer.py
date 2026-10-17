@@ -46,6 +46,9 @@ class _BranchVisitor(ast.NodeVisitor):
 
     def visit_Match(self, node: ast.Match) -> None:
         self._add(node, "match-case", len(node.cases))
+        for case in node.cases:
+            if case.guard is not None:
+                self._add(case.guard, "match-guard")
         self.generic_visit(node)
 
     def visit_comprehension(self, node: ast.comprehension) -> None:
@@ -122,7 +125,7 @@ def analyze_python_bytes(data: bytes, *, relative_path: str) -> FileMetric:
     source = data.decode("utf-8")
     lines = len(source.splitlines())
     try:
-        tree = ast.parse(source, filename=relative_path)
+        tree = ast.parse(source, filename=relative_path, feature_version=(3, 11))
     except SyntaxError as exc:
         return FileMetric(
             path=relative_path,

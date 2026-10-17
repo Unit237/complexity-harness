@@ -27,18 +27,19 @@ FUNCTIONS = {
 BRANCHES = {
     'if_statement','if_expression','if','unless','unless_modifier','if_modifier',
     'elsif','elif_clause','elseif_statement','else_if_clause',
-    'for_statement','for_in_statement','for_expression','for','for_generic_clause','for_numeric_clause',
+    'for_statement','for_in_statement','for_expression','for','for_range_loop','enhanced_for_statement',
     'while_statement','while_expression','while','while_modifier','until','until_modifier',
     'do_statement','do_while_statement','repeat_statement',
     'catch_clause','catch_block','catch','rescue','rescue_modifier',
     'case_statement','switch_case','case_switch_label','switch_label','switch_section','switch_statement_case','expression_case','type_case','switch_expression_arm',
     'match_arm','when_entry','when','case_item','switch_entry','select_case','communication_case','foreach_statement',
     'conditional_expression','ternary_expression','conditional','ternary','optional_chain','conditional_access_expression',
-    'preproc_if','preproc_ifdef',
+    'preproc_if','preproc_ifdef','try_expression','elvis_expression','guard_statement','if_element',
 }
 # Avoid double counting wrapper and label nodes in the same grammar.
 IGNORED_BRANCHES = {'java':{'switch_block_statement_group'}, 'csharp':{'switch_block_statement_group'},
-                    'ruby':{'case_statement'}, 'bash':{'case_statement'}, 'dart':{'switch_entry'}}
+                    'ruby':{'case_statement'}, 'bash':{'case_statement'}, 'dart':{'switch_entry'},
+                    'swift':{'try_expression'}}
 CONTAINERS = {
     'hcl':{'block','tuple','object','for_tuple_expr','for_object_expr','conditional'},
     'sql':{'statement','select','subquery','join','case','cte','binary_expression'},
@@ -78,6 +79,8 @@ def analyze_bytes(data, *, relative_path, language):
         node, owner = stack.pop()
         if node.type in FUNCTIONS[language]:
             name = node.child_by_field_name('name') or node.child_by_field_name('declarator')
+            if language == 'kotlin' and name is None:
+                name = next((child for child in node.named_children if child.type == 'simple_identifier'), None)
             if language == 'dart' and node.prev_named_sibling:
                 name = node.prev_named_sibling.child_by_field_name('name')
             while name and name.child_by_field_name('declarator'):
@@ -92,6 +95,11 @@ def analyze_bytes(data, *, relative_path, language):
             # Default cases do not add an alternative decision.
             if node.type not in {'switch_case','case_statement','case_switch_label','switch_label','switch_section','when_entry','switch_entry'} or not any(c.type in {'default','default_keyword','else'} for c in node.children):
                 evidence.append(BranchEvidence(node.type,node.start_point.row+1))
+        if language in {'javascript','typescript','tsx'} and (
+            node.type in {'assignment_pattern','object_assignment_pattern'}
+            or node.type in {'required_parameter','optional_parameter'} and node.child_by_field_name('value') is not None
+        ):
+            evidence.append(BranchEvidence('default-evaluation',node.start_point.row+1))
         for token in node.children:
             if not token.is_named and token.type in {'&&','||','??','and','or'}:
                 evidence.append(BranchEvidence('short-circuit',token.start_point.row+1))

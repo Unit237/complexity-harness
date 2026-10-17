@@ -33,3 +33,9 @@ def test_duplicate_nested_symbols_receive_stable_occurrences(tmp_path):
     duplicates = [row for row in metric.functions if row.symbol == "outer.event_gen"]
 
     assert [row.occurrence for row in duplicates] == [1, 2]
+
+
+def test_python_grammar_is_pinned_across_supported_producer_runtimes():
+    from complexity_harness.python_analyzer import analyze_python_bytes
+    metric=analyze_python_bytes(b"type CustomerId = int\n",relative_path="newer_syntax.py")
+    assert metric.parse_error and not metric.functions

@@ -22,7 +22,7 @@ def snapshot(values=(25,), sha="a", path="service.py"):
 
 
 def test_fixed_policy_and_gold_cases_preserve_hotspot_tail_and_direction():
-    assert POLICY == json.loads((ROOT/"contracts/complexity-burden-v2.json").read_text())
+    assert POLICY == json.loads((ROOT/"contracts/complexity-burden-v3.json").read_text())
     for case in json.loads((ROOT/"tests/fixtures/burden-gold-v1.json").read_text()):
         assert score_values(case["values"]) == case["score"]
         assert level(case["score"]) == case["level"]
@@ -122,3 +122,43 @@ def test_moving_branches_outside_named_functions_cannot_earn_reduction_credit(re
     assert measured_after["summary"]["decisions"]==measured_before["summary"]["decisions"]==1
     assert measured_after["files"][0]["unattributed_decisions"]==1
     assert not reduction_evidence(measured_before,measured_after)["comparable"]
+
+
+def test_reference_anchors_are_fixed_and_concentrated_hotspots_remain_visible():
+    for anchor in POLICY["anchors"]:
+        assert score_values([anchor["decisions"]+1]*100) == anchor["score"]
+    # Equal total decisions, concentrated versus dispersed; tail should expose concentration.
+    assert score_values([25]+[1]*9) > score_values([4]*8+[1]*2)
+    assert score_values([1,6,15,25]*2) == score_values([1,6,15,25]*20)
+    assert score_values([49]*10) == 100  # Saturation is explicit; raw counts remain available.
+
+
+def test_declarative_documents_never_set_or_dilute_the_control_flow_score(tmp_path):
+    (tmp_path/"service.py").write_text("def choose(x):\n"+"".join(f" if x == {i}:\n  return {i}\n" for i in range(18))+" return 0\n")
+    def measure(sha):
+        payload=scan_repository(tmp_path).as_dict();payload["repository"].update(clean=True,commit=sha*40)
+        return measure_snapshot(payload)
+    before=measure("a")
+    (tmp_path/"config.json").write_text(json.dumps({str(i):{"a":{"b":{"c":{"d":i}}}} for i in range(50)}))
+    mixed=measure("b")
+    assert mixed["score"] == before["score"]
+    assert mixed["summary"] == before["summary"]
+    assert mixed["findings"][0]["metric_family"] == "control_flow"
+    assert mixed["factors"]["structure"]["decisions"] > 0
+    assert mixed["factors"]["structure"]["score"] is None
+    assert next(f for f in mixed["files"] if f["path"]=="config.json")["score"] is None
+    assert not reduction_evidence(before,mixed)["comparable"]
+    (tmp_path/"service.py").unlink()
+    document_only=measure("c")
+    assert document_only["score"] is None and document_only["level"] == "Unmeasured"
+    assert document_only["summary"]["functions"] == 0
+    assert document_only["coverage"]["complete"]  # Parsed diagnostics, still no primary score.
+
+
+def test_scale_upgrade_cannot_earn_reduction_credit():
+    before=measure_snapshot(snapshot((25,)))
+    after=measure_snapshot(snapshot((10,),sha="b"))
+    before["version"]="complexity-burden-v2"
+    result=reduction_evidence(before,after)
+    assert not result["comparable"]
+    assert "The measurement policy or exclusions changed" in result["reasons"]

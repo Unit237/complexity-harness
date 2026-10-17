@@ -91,13 +91,23 @@ Configuration is optional at `.complexity/config.json`:
 complexity-harness burden /tmp/before.json
 ```
 
-`complexity-burden-v2` maps measured source burden onto 0–100; higher is
-worse. Programming-language adapters count control-flow decisions in functions,
-closures and module code. Declarative adapters count excess container nesting
-beyond three levels and fan-out beyond eight direct child containers (not flat scalar declarations). These are distinct
-metric families, not interchangeable cyclomatic claims. Each family uses the
-fixed mean/tail normalization; the highest family is the repository score and
-the highest repository is the product score. The contract documents the formula.
+`complexity-burden-v3` maps explicit control-flow decisions onto 0–100;
+higher is worse. A unit with 0 / 5 / 14 / 24 decisions has a fixed load of
+0 / 20.83 / 58.33 / 100. The repository combines 60% mean load with 40% mean
+highest-decile load; the highest repository sets the product score. These are
+investigation thresholds, not defect probabilities or an empirical measure of
+engineering time. Raw counts remain visible above the 24-decision saturation
+point. Nesting, domain necessity, coupling and semantic duplication need review.
+
+Declarative adapters retain nesting/fan-out diagnostics without a numeric score.
+The 20-repository calibration found ordinary document structure dominating 18
+of the first 19 v2 scores. Comparing those points with cyclomatic decisions was
+misleading; document-only repositories are now unmeasured on the main map.
+This version change establishes a baseline and earns no Work credit.
+
+See [benchmarks/README.md](benchmarks/README.md) for the pinned public corpus,
+180 construct oracles, independent comparison, results and limitations. Public
+repositories are customer stand-ins, not actual customer outcome validation.
 
 The scan inventories every Git-visible file, including `.mjs`, `.cc`, shell,
 Terraform, SQL, configuration and unknown customer extensions. Documentation,

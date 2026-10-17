@@ -1,0 +1,206 @@
+{
+  "schema_version": "complexity-corpus-v1",
+  "purpose": "Public, pinned customer stand-ins; source is parsed as data and never executed.",
+  "repositories": [
+    {
+      "repository": "psf/requests",
+      "requested_ref": "v2.32.3",
+      "commit": "0e322af87745eff34caffe4df68456ebc20d9068",
+      "role": "python",
+      "url": "https://github.com/psf/requests/tree/0e322af87745eff34caffe4df68456ebc20d9068",
+      "cohort": "holdout",
+      "archive_url": "https://codeload.github.com/psf/requests/tar.gz/0e322af87745eff34caffe4df68456ebc20d9068",
+      "archive_sha256": "0e26fc10271a9a328923ebc478e99397d034d1d8ad12cabe9100c9de3d6a6865"
+    },
+    {
+      "repository": "expressjs/express",
+      "requested_ref": "v5.1.0",
+      "commit": "cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4",
+      "role": "javascript",
+      "url": "https://github.com/expressjs/express/tree/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/expressjs/express/tar.gz/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4",
+      "archive_sha256": "53ac9591a8c20423c989a73a2362892e5c75e8286d01c227f73e8a11b91ba9c8"
+    },
+    {
+      "repository": "vuejs/core",
+      "requested_ref": "v3.5.13",
+      "commit": "6eb29d345aa73746207f80c89ee8b37ff7b949c9",
+      "role": "typescript/tsx",
+      "url": "https://github.com/vuejs/core/tree/6eb29d345aa73746207f80c89ee8b37ff7b949c9",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/vuejs/core/tar.gz/6eb29d345aa73746207f80c89ee8b37ff7b949c9",
+      "archive_sha256": "88ba7bed535cb9f78e9da23729e77efa55f978954376375700c5cda57deb3878"
+    },
+    {
+      "repository": "go-chi/chi",
+      "requested_ref": "v5.2.0",
+      "commit": "0a20a0e3400e551803f463d17a0ab84ee8afef3c",
+      "role": "go",
+      "url": "https://github.com/go-chi/chi/tree/0a20a0e3400e551803f463d17a0ab84ee8afef3c",
+      "cohort": "holdout",
+      "archive_url": "https://codeload.github.com/go-chi/chi/tar.gz/0a20a0e3400e551803f463d17a0ab84ee8afef3c",
+      "archive_sha256": "4d3242486e6e1dfe7dc189eafa78fa379d4338448bac071aec1093c1feb1c00b"
+    },
+    {
+      "repository": "DapperLib/Dapper",
+      "requested_ref": "2.1.66",
+      "commit": "bd4f75b512de3e00f2c2631d5309961a1ecfea23",
+      "role": "csharp",
+      "url": "https://github.com/DapperLib/Dapper/tree/bd4f75b512de3e00f2c2631d5309961a1ecfea23",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/DapperLib/Dapper/tar.gz/bd4f75b512de3e00f2c2631d5309961a1ecfea23",
+      "archive_sha256": "2e750089dcf37e11531126cf860a1eef43d187a25fca640eca3f4b5ed3bf63ab"
+    },
+    {
+      "repository": "spring-projects/spring-petclinic",
+      "requested_ref": "main",
+      "commit": "500158f732419217507c7656904b8e6aa1bcc0d6",
+      "role": "java",
+      "url": "https://github.com/spring-projects/spring-petclinic/tree/500158f732419217507c7656904b8e6aa1bcc0d6",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/spring-projects/spring-petclinic/tar.gz/500158f732419217507c7656904b8e6aa1bcc0d6",
+      "archive_sha256": "4932ae0209375b3cca3dd7c8f6f9345498d75dedc5970dcfa91814f1b830768d"
+    },
+    {
+      "repository": "sinatra/sinatra",
+      "requested_ref": "v4.1.1",
+      "commit": "7b50a1bbb5324838908dfaa00ec53ad322673a29",
+      "role": "ruby",
+      "url": "https://github.com/sinatra/sinatra/tree/7b50a1bbb5324838908dfaa00ec53ad322673a29",
+      "cohort": "holdout",
+      "archive_url": "https://codeload.github.com/sinatra/sinatra/tar.gz/7b50a1bbb5324838908dfaa00ec53ad322673a29",
+      "archive_sha256": "dbd0ca6f7f663357f7f6c5305a827914c8d0284365797d9cb86e53a878b5e342"
+    },
+    {
+      "repository": "slimphp/Slim",
+      "requested_ref": "4.14.0",
+      "commit": "5943393b88716eb9e82c4161caa956af63423913",
+      "role": "php",
+      "url": "https://github.com/slimphp/Slim/tree/5943393b88716eb9e82c4161caa956af63423913",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/slimphp/Slim/tar.gz/5943393b88716eb9e82c4161caa956af63423913",
+      "archive_sha256": "a3d61aab94119c6793a2106f6d48f6f01189bc9f7f5cfca5c60338442ff0ada4"
+    },
+    {
+      "repository": "tokio-rs/axum",
+      "requested_ref": "axum-v0.8.9",
+      "role": "rust",
+      "commit": "c59208c86fded335cd85e388030ad59347b0e5ae",
+      "url": "https://github.com/tokio-rs/axum/tree/c59208c86fded335cd85e388030ad59347b0e5ae",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/tokio-rs/axum/tar.gz/c59208c86fded335cd85e388030ad59347b0e5ae",
+      "archive_sha256": "07e84be117e11980890ff135d45f79f1b68874a0086ae74d3952a40ee8b1ac9a"
+    },
+    {
+      "repository": "dart-lang/shelf",
+      "requested_ref": "shelf-v1.4.2",
+      "commit": "2536c15a562cb183dabbc628824a215663830325",
+      "role": "dart",
+      "url": "https://github.com/dart-lang/shelf/tree/2536c15a562cb183dabbc628824a215663830325",
+      "cohort": "holdout",
+      "archive_url": "https://codeload.github.com/dart-lang/shelf/tar.gz/2536c15a562cb183dabbc628824a215663830325",
+      "archive_sha256": "2c1e966683e208d642d6dc3edf96a09e16c7eb59677cf65721f98c92d9f9b18b"
+    },
+    {
+      "repository": "Kotlin/kotlinx.serialization",
+      "requested_ref": "v1.8.0",
+      "commit": "f9f160a680da9f92c3bb121ae3644c96e57ba42e",
+      "role": "kotlin",
+      "url": "https://github.com/Kotlin/kotlinx.serialization/tree/f9f160a680da9f92c3bb121ae3644c96e57ba42e",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/Kotlin/kotlinx.serialization/tar.gz/f9f160a680da9f92c3bb121ae3644c96e57ba42e",
+      "archive_sha256": "555c71890ff64ca593ff4edcfa243cfd9ec9c02993cd60cdf7ea4404bd0de927"
+    },
+    {
+      "repository": "apple/swift-http-types",
+      "requested_ref": "1.3.1",
+      "commit": "ef18d829e8b92d731ad27bb81583edd2094d1ce3",
+      "role": "swift",
+      "url": "https://github.com/apple/swift-http-types/tree/ef18d829e8b92d731ad27bb81583edd2094d1ce3",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/apple/swift-http-types/tar.gz/ef18d829e8b92d731ad27bb81583edd2094d1ce3",
+      "archive_sha256": "8a3f3d2c4334bf22ab664016718ce96baa6627e01b788023f9d70951dbe49717"
+    },
+    {
+      "repository": "libuv/libuv",
+      "requested_ref": "v1.50.0",
+      "commit": "8fb9cb919489a48880680a56efecff6a7dfb4504",
+      "role": "c",
+      "url": "https://github.com/libuv/libuv/tree/8fb9cb919489a48880680a56efecff6a7dfb4504",
+      "cohort": "holdout",
+      "archive_url": "https://codeload.github.com/libuv/libuv/tar.gz/8fb9cb919489a48880680a56efecff6a7dfb4504",
+      "archive_sha256": "9e7949925f1bc0ce0b65e32c8171923edd73c8ffca81a2fbb758841826ff22e2"
+    },
+    {
+      "repository": "fmtlib/fmt",
+      "requested_ref": "11.1.3",
+      "commit": "9cf9f38eded63e5e0fb95cd536ba51be601d7fa2",
+      "role": "cpp",
+      "url": "https://github.com/fmtlib/fmt/tree/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/fmtlib/fmt/tar.gz/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2",
+      "archive_sha256": "df92674b1d2ab01ca0ec2afddb3227a235f523469c4fc3e2869e0b27f3e8886c"
+    },
+    {
+      "repository": "lunarmodules/busted",
+      "requested_ref": "v2.2.0",
+      "commit": "02f31a9c103a44e166617cfdb6ba1b8994a9c912",
+      "role": "lua",
+      "url": "https://github.com/lunarmodules/busted/tree/02f31a9c103a44e166617cfdb6ba1b8994a9c912",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/lunarmodules/busted/tar.gz/02f31a9c103a44e166617cfdb6ba1b8994a9c912",
+      "archive_sha256": "56c94c47f72c346aca0c972e7833217a98a6c20c3e74f0a3dd5fffefbd2064ce"
+    },
+    {
+      "repository": "bats-core/bats-core",
+      "requested_ref": "v1.11.1",
+      "commit": "b640ec3cf2c7c9cfc9e6351479261186f76eeec8",
+      "role": "bash",
+      "url": "https://github.com/bats-core/bats-core/tree/b640ec3cf2c7c9cfc9e6351479261186f76eeec8",
+      "cohort": "holdout",
+      "archive_url": "https://codeload.github.com/bats-core/bats-core/tar.gz/b640ec3cf2c7c9cfc9e6351479261186f76eeec8",
+      "archive_sha256": "e53d63a1ebb43722ce65b0ddea9e86abcc279bc825a62c373a9e477080f23d50"
+    },
+    {
+      "repository": "terraform-aws-modules/terraform-aws-vpc",
+      "requested_ref": "v5.19.0",
+      "commit": "961c9b51e3ed3959d9419f019e7085c087bf7297",
+      "role": "hcl",
+      "url": "https://github.com/terraform-aws-modules/terraform-aws-vpc/tree/961c9b51e3ed3959d9419f019e7085c087bf7297",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/terraform-aws-modules/terraform-aws-vpc/tar.gz/961c9b51e3ed3959d9419f019e7085c087bf7297",
+      "archive_sha256": "ff3204f2345ddde0e57121548d7268ab187934ed6e9aaf471337a7ee649580e8"
+    },
+    {
+      "repository": "dbt-labs/jaffle-shop",
+      "requested_ref": "main",
+      "commit": "5beb145b00f5465ec759cfcdd9745e858818cf95",
+      "role": "sql/jinja",
+      "url": "https://github.com/dbt-labs/jaffle-shop/tree/5beb145b00f5465ec759cfcdd9745e858818cf95",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/dbt-labs/jaffle-shop/tar.gz/5beb145b00f5465ec759cfcdd9745e858818cf95",
+      "archive_sha256": "c58ad95f1fb81be06dd192438ba9861d01cff21449a8450b268a3826b626d10e"
+    },
+    {
+      "repository": "necolas/normalize.css",
+      "requested_ref": "8.0.1",
+      "commit": "fc091cce1534909334c1911709a39c22d406977b",
+      "role": "css",
+      "url": "https://github.com/necolas/normalize.css/tree/fc091cce1534909334c1911709a39c22d406977b",
+      "cohort": "holdout",
+      "archive_url": "https://codeload.github.com/necolas/normalize.css/tar.gz/fc091cce1534909334c1911709a39c22d406977b",
+      "archive_sha256": "53933ba214ab20b501a4ed1f08796ef716a5f1ccb8e0f9977a27f802cb09bcda"
+    },
+    {
+      "repository": "GoogleContainerTools/skaffold",
+      "requested_ref": "v2.14.0",
+      "commit": "f132ab25adf1599c7fbdce733144991126565386",
+      "role": "yaml/json",
+      "url": "https://github.com/GoogleContainerTools/skaffold/tree/f132ab25adf1599c7fbdce733144991126565386",
+      "cohort": "calibration",
+      "archive_url": "https://codeload.github.com/GoogleContainerTools/skaffold/tar.gz/f132ab25adf1599c7fbdce733144991126565386",
+      "archive_sha256": "0b3056cea66d87271d4221f36a26b9ad600f1def8402a9a3d62a3a025e3305e0"
+    }
+  ]
+}

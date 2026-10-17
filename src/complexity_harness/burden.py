@@ -1,6 +1,6 @@
 """Versioned, explainable code burden. Copied unchanged into consumers.
 
-This index describes measured control flow and declarative structure, not
+This index describes measured control flow, with declarative diagnostics, not
 universal maintainability or semantic duplication. Missing languages never receive a zero complexity value.
 """
 from __future__ import annotations
@@ -13,8 +13,8 @@ import re
 from .complexity_languages import classify_path
 
 
-VERSION = "complexity-burden-v2"
-ANALYZER = "polyglot-ast-v1/pack-0.13.0/ts-0.25.2"
+VERSION = "complexity-burden-v3"
+ANALYZER = "polyglot-ast-v2/pack-0.13.0/ts-0.25.2"
 # This is the admission contract, not a claim that every available grammar has
 # a validated complexity adapter. Native parser dependencies stay in producers.
 CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua"}
@@ -22,6 +22,7 @@ STRUCTURAL_LANGUAGES = {"hcl", "sql", "css", "json", "yaml", "html", "dockerfile
 POLICY = {
     "version": VERSION,
     "analyzer": ANALYZER,
+    "python_grammar": "3.11 (pinned across producer runtimes; newer syntax remains unmeasured)",
     "decision_ceiling": 24,
     "mean_weight": 0.6,
     "tail_weight": 0.4,
@@ -36,9 +37,11 @@ POLICY = {
     ],
     "formula": "100 × (0.6 × mean function load + 0.4 × mean highest-decile load); function load = min((cyclomatic − 1) / 24, 1)",
     "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score.",
-    "meaning": "Measured code burden, 0–100, higher is worse. Control flow and declarative structure are separate factors; the highest factor determines repository burden. Unsupported source stays unknown.",
-    "reduction_audit": "Counts recognized decisions in every function, closure and module. Declarative structure uses excess nesting and fan-out, not cyclomatic complexity. Every factor must stay level or improve; changed unknown, data or excluded source blocks credit.",
-    "structural_formula": "Per document: one point for each container level beyond 3, plus each child container beyond 8. Flat scalar declarations do not add fan-out. Normalize with the same 24-point ceiling; aggregate each metric family separately and take the highest factor.",
+    "meaning": "Measured control-flow burden, 0–100, higher is worse. This is an index of explicit decisions, not a probability of defects or total engineering difficulty. Declarative structure is diagnostic evidence only and never sets this score. Unsupported source stays unknown.",
+    "calibration": "Fixed reference anchors, not population percentiles: a repository of functions with 0, 5, 14 or 24 decisions scores 0, 20.83, 58.33 or 100. Bands and the target are investigation thresholds, not empirically proven quality grades. Nesting and domain necessity require source review.",
+    "anchors": [{"decisions": 0, "score": 0}, {"decisions": 5, "score": 20.83}, {"decisions": 14, "score": 58.33}, {"decisions": 24, "score": 100}],
+    "reduction_audit": "Counts recognized decisions in every function, closure and module. A lower score alone is insufficient: total control-flow decisions must fall, structural diagnostic points cannot increase, and changed unknown, data or excluded source blocks credit.",
+    "structural_formula": "Diagnostic only: record container count, maximum nesting, excess levels beyond 3 and child containers beyond 8. These are not control-flow decisions and have no calibrated 0–100 score. Document-only repositories remain unmeasured on the main complexity map.",
     "reduction_requires": ["comparable_complete_scan", "fewer_decisions", "exact_revision_behavior_checks", "merged_source"],
 }
 
@@ -119,7 +122,7 @@ def measure_snapshot(snapshot):
     factors, language_counts = {}, {}
     for entry in inventory:
         if entry["path"] in expected:
-            language_counts.setdefault(entry["language"], {"language":entry["language"],"eligible_files":0,"analyzed_files":0,"support":"unsupported"})["eligible_files"] += 1
+            language_counts.setdefault(entry["language"], {"language":entry["language"],"eligible_files":0,"analyzed_files":0,"support":"unsupported", "metric_family":"control_flow" if entry["language"] in CONTROL_LANGUAGES else "structure" if entry["language"] in STRUCTURAL_LANGUAGES else "unknown"})["eligible_files"] += 1
     errors, error_reasons = [], {}
     for row in rows:
         path = _path(row.get("path"))
@@ -178,7 +181,8 @@ def measure_snapshot(snapshot):
                     "explanation": "Excess nesting or fan-out warrants structural investigation." if family=="structure" else "Independent control-flow decisions warrant investigation; this is not proof of a defect."})
         if outside_decisions:
             local.append(outside_decisions+1)
-        values.extend(local)
+        if family == "control_flow":
+            values.extend(local)
         factor = factors.setdefault(family,{"values":[],"decisions":0,"files":0})
         factor["values"].extend(local)
         factor["decisions"] += sum(v-1 for v in local)
@@ -189,17 +193,24 @@ def measure_snapshot(snapshot):
             "language":row["language"],"metric_family":family,"structural":row.get("structural",{}),
             "functions": len(local), "decisions": sum(v - 1 for v in local),
             "unattributed_decisions": outside_decisions,
-            "max_cyclomatic": max(local, default=0), "score": score_values(local),
+            "max_cyclomatic": max(local, default=0), "score": score_values(local) if family == "control_flow" else None,
             "hotspots": sum(v >= 15 for v in local), "values": local})
-    for factor in factors.values():
-        factor["score"] = score_values(factor.pop("values"))
-    score = score_repositories(factor["score"] for factor in factors.values())
+    for family, factor in factors.items():
+        local = factor.pop("values")
+        factor["score"] = score_values(local) if family == "control_flow" else None
+        factor["status"] = "scored" if family == "control_flow" else "diagnostic_only"
+    score = factors.get("control_flow", {}).get("score")
     for language in language_counts.values():
         language["support"] = "measured" if language["analyzed_files"]==language["eligible_files"] else "partial" if language["analyzed_files"] else "unsupported"
     eligible = len(seen)
+    scored_files = sum(file["metric_family"] == "control_flow" for file in files)
+    diagnostic_files = len(files) - scored_files
+    score_eligible_files = sum(row["eligible_files"] for row in language_counts.values() if row["metric_family"] != "structure")
     return {"version": VERSION, "analyzer": ANALYZER, "source_sha": source["commit"],
         "scope_hash": coverage["scope_hash"], "score": score, "level": level(score),
         "coverage": {"eligible_files": eligible, "analyzed_files": len(files),
+            "scored_files":scored_files,"diagnostic_files":diagnostic_files,"score_eligible_files":score_eligible_files,
+            "score_percent":round(100 * scored_files / score_eligible_files, 2) if score_eligible_files else None,
             "unsupported_paths": unknown, "unsupported_hashes": unknown_hashes, "parse_error_paths": errors,
             "percent": round(100 * len(files) / eligible, 2) if eligible else 0,
             "complete": bool(eligible) and not unknown and not errors,
@@ -209,10 +220,10 @@ def measure_snapshot(snapshot):
             "unmeasured": [{"path":p,"language":inventory_by_path[p]["language"],"reason":error_reasons.get(p) or inventory_by_path[p].get("reason") or "Parser or dialect unavailable"} for p in unknown+errors],
             "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated","data"})).encode()).hexdigest()},
         "factors":factors,
-        "summary": {"functions": len(values), "decisions": sum(file["decisions"] for file in files),
+        "summary": {"functions": len(values), "decisions": sum(file["decisions"] for file in files if file["metric_family"] == "control_flow"),
             "hotspots": sum(v >= 15 for v in values), "very_high": sum(v >= 40 for v in values),
             "max_cyclomatic": max(values, default=0)},
-        "files": files, "findings": sorted(findings, key=lambda f: (-f["cyclomatic"], f["path"], f["line"])),
+        "files": files, "findings": sorted(findings, key=lambda f: (f["metric_family"] == "structure", -f["cyclomatic"], f["path"], f["line"])),
         "policy": POLICY}
 
 

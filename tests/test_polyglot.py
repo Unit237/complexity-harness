@@ -79,7 +79,9 @@ def test_customer_inventory_includes_unknown_dsl_declarative_code_and_unusual_ex
  assert result['coverage']['percent']==63.64
  assert set(result['coverage']['unsupported_paths'])=={'legacy.cbl','rules.customerlang','component.vue','.env'}
  assert set(result['factors'])=={'control_flow','structure'}
- assert result['score']==max(f['score'] for f in result['factors'].values())
+ assert result['score']==result['factors']['control_flow']['score']
+ assert result['factors']['structure']['score'] is None
+ assert result['factors']['structure']['status']=='diagnostic_only'
  omitted=copy.deepcopy(payload);omitted['coverage']['unsupported_paths'].remove('rules.customerlang')
  with pytest.raises(ValueError,match='Every eligible'):
   measure_snapshot(omitted)

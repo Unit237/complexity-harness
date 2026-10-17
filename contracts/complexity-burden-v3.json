@@ -1,0 +1,62 @@
+{
+  "version": "complexity-burden-v3",
+  "analyzer": "polyglot-ast-v2/pack-0.13.0/ts-0.25.2",
+  "python_grammar": "3.11 (pinned across producer runtimes; newer syntax remains unmeasured)",
+  "decision_ceiling": 24,
+  "mean_weight": 0.6,
+  "tail_weight": 0.4,
+  "tail_fraction": 0.1,
+  "target": 35,
+  "bands": [
+    {
+      "minimum": 0,
+      "label": "Low"
+    },
+    {
+      "minimum": 20,
+      "label": "Moderate"
+    },
+    {
+      "minimum": 40,
+      "label": "Elevated"
+    },
+    {
+      "minimum": 60,
+      "label": "High"
+    },
+    {
+      "minimum": 80,
+      "label": "Very high"
+    }
+  ],
+  "formula": "100 \u00d7 (0.6 \u00d7 mean function load + 0.4 \u00d7 mean highest-decile load); function load = min((cyclomatic \u2212 1) / 24, 1)",
+  "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score.",
+  "meaning": "Measured control-flow burden, 0\u2013100, higher is worse. This is an index of explicit decisions, not a probability of defects or total engineering difficulty. Declarative structure is diagnostic evidence only and never sets this score. Unsupported source stays unknown.",
+  "calibration": "Fixed reference anchors, not population percentiles: a repository of functions with 0, 5, 14 or 24 decisions scores 0, 20.83, 58.33 or 100. Bands and the target are investigation thresholds, not empirically proven quality grades. Nesting and domain necessity require source review.",
+  "anchors": [
+    {
+      "decisions": 0,
+      "score": 0
+    },
+    {
+      "decisions": 5,
+      "score": 20.83
+    },
+    {
+      "decisions": 14,
+      "score": 58.33
+    },
+    {
+      "decisions": 24,
+      "score": 100
+    }
+  ],
+  "reduction_audit": "Counts recognized decisions in every function, closure and module. A lower score alone is insufficient: total control-flow decisions must fall, structural diagnostic points cannot increase, and changed unknown, data or excluded source blocks credit.",
+  "structural_formula": "Diagnostic only: record container count, maximum nesting, excess levels beyond 3 and child containers beyond 8. These are not control-flow decisions and have no calibrated 0\u2013100 score. Document-only repositories remain unmeasured on the main complexity map.",
+  "reduction_requires": [
+    "comparable_complete_scan",
+    "fewer_decisions",
+    "exact_revision_behavior_checks",
+    "merged_source"
+  ]
+}
