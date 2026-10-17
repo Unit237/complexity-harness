@@ -4,7 +4,7 @@ from collections import Counter,defaultdict
 import hashlib
 import json
 from pathlib import Path
-from complexity_harness.burden import ANALYZER,VERSION,STRUCTURAL_LANGUAGES,measure_snapshot
+from complexity_harness.burden import ANALYZER,VERSION,STRUCTURAL_LANGUAGES,CONTROL_LANGUAGES,measure_snapshot
 
 
 def main():
@@ -37,13 +37,14 @@ def main():
     modern=benchmark.parent/'tests/fixtures/python-modern-v1.json'
     modern_cases=json.loads(modern.read_text())
     syntax=benchmark/'customer-syntax-v1.json'
-    syntax_cases=json.loads(syntax.read_text())
-    result={'schema_version':'complexity-calibration-v3','measurement_version':VERSION,'analyzer':ANALYZER,'evaluated_on':'2026-10-17',
+    syntax_new=benchmark/'customer-syntax-v2.json'
+    syntax_cases=json.loads(syntax.read_text())+json.loads(syntax_new.read_text())
+    result={'schema_version':'complexity-calibration-v4','measurement_version':VERSION,'analyzer':ANALYZER,'evaluated_on':'2026-10-17',
         'source':'Pinned public repositories used as customer stand-ins; no private customer repositories or repository code execution.',
         'method':'Reference anchors and monotonicity checks, construct oracles, corpus coverage, and an independent analyzer comparison. This is not a statistical prediction of engineering difficulty.',
         'summary':{'repositories':len(rows),'scored_repositories':sum(r['status']=='measured' for r in rows),
             'diagnostic_only_repositories':sum(r['status']=='diagnostic_only' for r in rows),'resource_limited_repositories':sum(r['status']=='resource_limited' for r in rows),
-            'construct_cases':len(oracle['cases'])+len(modern_cases)+len(syntax_cases),'modern_python_cases':len(modern_cases),'customer_syntax_cases':len(syntax_cases),'programming_languages':17,'declarative_formats':len(STRUCTURAL_LANGUAGES),
+            'construct_cases':len(oracle['cases'])+len(modern_cases)+len(syntax_cases),'modern_python_cases':len(modern_cases),'customer_syntax_cases':len(syntax_cases),'programming_languages':len(CONTROL_LANGUAGES-{'unknown','c_header','procfile'}),'declarative_formats':len(STRUCTURAL_LANGUAGES),
             'analyzed_files':sum(r.get('analyzed_files',0) for r in rows),'scored_programming_units':sum(r.get('programming_units',0) for r in rows),
             'old_structure_dominated':sum(r.get('factors',{}).get('structure',{}).get('score') is not None and r.get('factors',{}).get('structure',{}).get('score')==r['score'] for r in before['repositories'])},
         'reference':{**report['reference'],'counts':{k:dict(v) for k,v in sorted(languages.items())},
@@ -54,11 +55,13 @@ def main():
             'Declarative structure lacks a validated common scale and remains diagnostic-only. Unsupported syntax stays visibly unmeasured.',
             'Python syntax is parsed offline with pinned LibCST 1.9.0, independent of the producer interpreter. Unsupported or malformed syntax remains unmeasured.',
             'Complete inventories support up to 200,000 eligible source files and 250,000 inventoried files, with 12 MB wire and 256 MB expanded evidence budgets. Individual source files have an 8 MB parsing budget; capacity failures never publish a partial baseline.',
-            'Pinned Babel parses JavaScript, JSX, Flow and TypeScript as data in a bounded V8 context with no host bindings. HTML inline code contributes control-flow evidence; embedded JSON/CSS remains diagnostic-only. Platform declaration normalization does not expand C/C++ macros.',
+            'Pinned Babel parses JavaScript, JSX, Flow and TypeScript as data in a bounded V8 context with no host bindings. HTML inline code contributes control-flow evidence; embedded JSON/CSS remains diagnostic-only. Build recipes, GitHub Actions expressions, templates and embedded scripts are parsed statically. C/C++ macro bodies are measured once where complete fragments can be parsed; this does not expand caller-dependent macros.',
             'Private configuration and recognized platform resources are separately fingerprinted outside source coverage. Changing protected non-code data blocks reduction credit. Unrecognized file types and customer DSLs stay unknown.',
+            'Plan 9/Go assembly is validated against pinned Go 1.25.3 instruction tables; arbitrary assembler dialects are unsupported. PowerShell grammar targets 5.1; unrecognized newer syntax stays unknown. AngularJS common directives and JavaScript-compatible expressions are covered; filters and unsupported expression dialects remain unknown. Customer DSLs and unsupported template dialects require their own validated reader.',
+            'Plan 9/Go assembly is validated against pinned Go 1.25.3 instruction tables; arbitrary assembler dialects are unsupported. PowerShell grammar targets 5.1; unrecognized newer syntax stays unknown. AngularJS common directives and JavaScript-compatible expressions are covered; filters and unsupported expression dialects remain unknown. Customer DSLs and unsupported template dialects require their own validated reader.',
             'Scores saturate at 24 decisions per unit. Raw branch evidence and hotspots retain larger counts; nesting and essential domain logic require review.'],
         'evidence_hashes':{name:hashlib.sha256(path.read_bytes()).hexdigest() for name,path in {
-            'modern_python_oracle':modern,'customer_syntax_oracle':syntax,'repository_manifest':benchmark/'repositories-v1.json','construct_oracle':benchmark/'construct-oracle-v1.json',
+            'modern_python_oracle':modern,'customer_syntax_oracle':syntax,'customer_syntax_oracle_v2':syntax_new,'repository_manifest':benchmark/'repositories-v1.json','construct_oracle':benchmark/'construct-oracle-v1.json',
             'before_report':Path(args.before),'after_report':report_path}.items()},'repositories':rows}
     Path(args.output).write_text(json.dumps(result,indent=2)+'\n')
     print(json.dumps(result['summary']))

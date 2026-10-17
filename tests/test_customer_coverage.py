@@ -6,17 +6,26 @@ from complexity_harness.burden import measure_snapshot, reduction_evidence, MAX_
 from complexity_harness.complexity_languages import classify_path
 from complexity_harness.polyglot_analyzer import analyze_bytes
 from complexity_harness.scanner import scan_repository
+from complexity_harness.source_scope import content_fingerprint
+from complexity_harness.burden import ANALYZER
+from dataclasses import asdict
 
 
-CASES=json.loads((Path(__file__).parents[1]/'benchmarks/customer-syntax-v1.json').read_text())
+CASES=sum((json.loads(path.read_text()) for path in sorted((Path(__file__).parents[1]/'benchmarks').glob('customer-syntax-v*.json'))),[])
 
 @pytest.mark.parametrize('case',CASES,ids=lambda case:case['path']+'-'+case['language'])
 def test_real_world_syntax_retains_every_explicit_decision(case):
     path,language,source,decisions=(case[k] for k in ("path","language","source","decisions"))
     metric=analyze_bytes(source.encode(),relative_path=path,language=language)
     assert not metric.parse_error,metric.parse_error
-    assert sum(f.cyclomatic-1 for f in metric.functions)==decisions
+    if metric.metric_family=='control_flow':
+        assert sum(f.cyclomatic-1 for f in metric.functions)+sum(b.contribution for b in metric.unattributed_branches)==decisions
     assert all(1<=branch.line<=metric.lines for f in metric.functions for branch in f.branches)
+    classification=classify_path(path)
+    measured=measure_snapshot({'schema_version':'complexity-snapshot-v1','repository':{'commit':'a'*40,'clean':True},'files':[asdict(metric)],
+        'coverage':{'analyzer':ANALYZER,'scope_hash':'c'*64,'unsupported_paths':[],'inventory_complete':True,'inventory_policy':'all-files-v2','inventory':[{'path':path,'sha256':content_fingerprint(source.encode()),**classification}]}})
+    assert measured['coverage']['analyzed_files']==1
+    assert measured['summary']['decisions']==decisions
 
 
 @pytest.mark.parametrize('path,language',[
@@ -93,3 +102,60 @@ def test_computed_method_names_run_in_the_enclosing_scope_and_parameters_in_the_
     metric=analyze_bytes(b'const obj = {[x ? "a" : "b"](y = true) { return x && y; }};',relative_path='scope.js',language='javascript')
     assert not metric.parse_error
     assert {f.symbol:f.cyclomatic-1 for f in metric.functions}=={'<ObjectMethod>':2,'<module>':1}
+
+
+def test_incomplete_examples_and_ambiguous_assembly_remain_unmeasured():
+    for path,language,source in [
+        ('Dockerfile','dockerfile','FROM alpine\n...\n'),
+        ('Dockerfile','dockerfile','FROM alpine\nRUN\n'),
+        ('branch.s','assembly','TEXT f(SB), $0-0\nBL target(SB)\nRET\n'),
+        ('branch_amd64.s','assembly','TEXT f(SB), $0-0\nCBZW R1, end\nend:\nRET\n'),
+    ]:
+        result=analyze_bytes(source.encode(),relative_path=path,language=language)
+        assert result.parse_error and not result.functions
+
+
+def test_assembly_register_alias_is_not_an_instruction_from_another_architecture():
+    metric=analyze_bytes(b'#define end BX\nTEXT f(SB), $0-0\nCMPQ AX, end\nJNE done\ndone:\nRET\n',relative_path='f_amd64.s',language='assembly')
+    assert not metric.parse_error and len(metric.functions)==1
+    assert metric.functions[0].cyclomatic==2
+
+
+def test_multiple_template_scripts_keep_distinct_native_unit_identities(tmp_path):
+    (tmp_path/'page.html').write_text('<script type="text/x-template"><button onclick="if(x) go()">Go</button></script><script type="text/x-template"><button onclick="if(y) go()">Go</button></script>')
+    value=measure(tmp_path,'a')
+    assert value['summary']['decisions']==2 and value['coverage']['complete']
+
+
+def test_diagnostic_and_template_data_cannot_hide_displaced_code(tmp_path):
+    (tmp_path/'app.py').write_text('def f(x):\n if x: return 1\n return 0\n')
+    (tmp_path/'page.tmpl').write_text('{{if .Ready}}ready{{end}}')
+    (tmp_path/'config.json').write_text('{"script":"unchanged"}')
+    before=measure(tmp_path,'a')
+    (tmp_path/'app.py').write_text('def f(x):\n return 0\n')
+    assert reduction_evidence(before,measure(tmp_path,'b'))['comparable']
+    (tmp_path/'page.tmpl').write_text('{{if .Ready}}if(x) doWork(){{end}}')
+    assert not reduction_evidence(before,measure(tmp_path,'b'))['comparable']
+    (tmp_path/'page.tmpl').write_text('{{if .Ready}}ready{{end}}')
+    (tmp_path/'config.json').write_text('{"script":"if(x) doWork()"}')
+    assert not reduction_evidence(before,measure(tmp_path,'b'))['comparable']
+
+
+def test_partial_coverage_never_rounds_to_complete():
+    from complexity_harness.burden import coverage_percent
+    assert coverage_percent(199999,200000)==99.99
+    assert coverage_percent(200000,200000)==100
+
+
+def test_joined_shell_lines_retain_physical_branch_positions():
+    source='for t in x; do \\\n if test x; then \\\n  echo x && echo y; \\\n fi \\\n done\n'
+    metric=analyze_bytes(source.encode(),relative_path='build.sh',language='bash')
+    assert not metric.parse_error
+    assert sorted(b.line for f in metric.functions for b in f.branches)==[1,2,3]
+
+
+def test_unrecognized_angular_expression_dialects_fail_closed():
+    for expression in ['items | customFilter','value ?? fallback','if (x) go()']:
+        source=f'<div ng-app="app" ng-click="{expression}">Go</div>'
+        metric=analyze_bytes(source.encode(),relative_path='page.html',language='html')
+        assert metric.parse_error and not metric.functions

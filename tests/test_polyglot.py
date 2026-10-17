@@ -25,6 +25,17 @@ PROGRAMS = {
  'bash':('app.sh','choose() { if [ "$1" = yes ]; then echo 1; else echo 0; fi; }'),
  'lua':('app.lua','function choose(a) if a then return 1 else return 0 end end'),
  'python':('app.py','def choose(a):\n    return 1 if a else 0\n'),
+ 'groovy':('app.groovy','def choose(a) { if(a) return 1; return 0 }'),
+ 'nix':('app.nix','a: if a then 1 else 0'),
+ 'starlark':('app.bzl','def choose(a):\n return 1 if a else 0\n'),
+ 'assembly':('app.s','TEXT ·choose(SB), $0-0\n JE done\n done: RET\n'),
+ 'batch':('app.cmd','@if exist file echo yes\n'),
+ 'gotemplate':('app.tpl','{{ if .A }}yes{{ else }}no{{ end }}'),
+ 'unknown':('runner','#!/bin/sh\nif test x; then echo yes; fi\n'),
+ 'nsis':('app.nsi','Section Main\n IfErrors end\n end:\nSectionEnd\n'),
+ 'procfile':('Procfile','web: if test x; then echo yes; fi\n'),
+ 'just':('justfile','test:\n    if test x; then echo yes; fi\n'),
+ 'powershell':('app.ps1','function Choose($a) { if ($a) { return 1 }; return 0 }'),
 }
 
 @pytest.mark.parametrize('language',sorted(PROGRAMS))
@@ -54,6 +65,10 @@ STRUCTURES = {
  'config':('app.ini','[application]\nname = customer\n'),
  'properties':('app.properties','application.name=customer\n'),
  'openstep':('project.pbxproj','{ objects = { abc = { isa = PBXProject; }; }; }'),
+ 'gomod':('go.mod','module example.com/customer\ngo 1.23\n'),
+ 'vue':('app.vue','<template><div>Hello</div></template>'),
+ 'abnf':('app.abnf','rule = "yes" / "no"\n'),
+ 'shell_cases':('envVarTest','A|input|output\n'),
 }
 
 @pytest.mark.parametrize('language',sorted(STRUCTURES))
@@ -81,15 +96,16 @@ def test_customer_inventory_includes_unknown_dsl_declarative_code_and_unusual_ex
  result=measure_snapshot(payload)
  assert result['coverage']['inventory_files']==12
  assert result['coverage']['eligible_files']==10
- assert result['coverage']['analyzed_files']==7
- assert result['coverage']['percent']==70
- assert set(result['coverage']['unsupported_paths'])=={'legacy.cbl','rules.customerlang','component.vue'}
+ assert result['coverage']['analyzed_files']==8
+ assert result['coverage']['percent']==80
+ assert set(result['coverage']['unsupported_paths'])=={'legacy.cbl','rules.customerlang'}
+ assert not result['coverage']['parse_error_paths']
  assert result['coverage']['inventory_counts']['opaque']==1
  assert set(result['factors'])=={'control_flow','structure'}
  assert result['score']==result['factors']['control_flow']['score']
  assert result['factors']['structure']['score'] is None
  assert result['factors']['structure']['status']=='diagnostic_only'
- omitted=copy.deepcopy(payload);omitted['coverage']['unsupported_paths'].remove('rules.customerlang')
+ omitted=copy.deepcopy(payload);omitted['files']=[row for row in omitted['files'] if row['path']!='rules.customerlang']
  with pytest.raises(ValueError,match='Every eligible'):
   measure_snapshot(omitted)
 

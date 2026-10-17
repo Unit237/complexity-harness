@@ -25,7 +25,7 @@ keeps those signals separate and inspectable.
 
 ## What it does
 
-- Inventories any repository, with branch evidence for 17 programming-language adapters and structural evidence for 11 declarative formats.
+- Inventories any repository, with branch evidence for 26 language/dialect profiles plus C/C++ headers and content-detected scripts, and diagnostics for 20 declarative formats.
 - Scans a multi-repository workspace from a canonical inventory.
 - Excludes aliases, duplicate checkouts, generated packages, and build outputs.
 - Gives duplicate symbols deterministic, collision-free finding IDs.
@@ -91,7 +91,7 @@ Configuration is optional at `.complexity/config.json`:
 complexity-harness burden /tmp/before.json
 ```
 
-`complexity-burden-v5` maps explicit control-flow decisions onto 0–100;
+`complexity-burden-v6` maps explicit control-flow decisions onto 0–100;
 higher is worse. A unit with 0 / 5 / 14 / 24 decisions has a fixed load of
 0 / 20.83 / 58.33 / 100. The repository combines 60% mean load with 40% mean
 highest-decile load; the highest repository sets the product score. These are
@@ -106,23 +106,28 @@ misleading; document-only repositories are now unmeasured on the main map.
 This version change establishes a baseline and earns no Work credit.
 
 See [benchmarks/README.md](benchmarks/README.md) for the pinned public corpus,
-186 construct oracles, independent comparison, results and limitations. Public
+274 construct and syntax oracles, independent comparison, results and limitations. Public
 repositories are customer stand-ins, not actual customer outcome validation.
 
 The scan inventories every Git-visible file, including `.mjs`, `.cc`, shell,
 Terraform, SQL, configuration and unknown customer extensions. Documentation,
 assets, recorded report/fixture data, generated/lock files and exclusions are counted separately. Unknown
-languages, unsupported dialects, parse errors, mixed embedded templates,
+languages, unsupported dialects, parse errors, unsupported embedded template dialects,
 symlinks and oversized files remain unmeasured with content fingerprints.
 Customer source is never executed. The broker uses bundled parsers offline and
 returns measurements, never source bodies. Python uses pinned LibCST 1.9.0 to
 parse Python 3.12–3.14 syntax independently of the producer's interpreter; other
-adapters pin tree-sitter-language-pack 0.13.0 and tree-sitter 0.25.2. Available
+adapters pin tree-sitter-language-pack 0.13.0 and tree-sitter 0.25.2. Build recipes, template conditions, GitHub Actions expressions, inline scripts and
+Plan 9/Go assembly retain source branch evidence through bounded static readers.
+C/C++ macros are measured once as source fragments, not expanded per invocation.
+Arbitrary custom DSLs, unsupported assembly dialects and unrecognized newer syntax
+remain unknown; inventorying any repository does not imply universal syntax support.
+Available
 grammars are not automatically advertised as validated complexity adapters.
 
 Completed Work cannot lower the accepted score by itself. A comparable scan
 must remove load without increasing any factor, changing language coverage or
-changing unknown/generated/excluded source or recorded data. The product also requires approved
+changing unknown/generated/excluded source, unscored template/configuration data or recorded data. The product also requires approved
 source scope, merged delivery, passing CI, and durable behavior-test receipts on
 the exact measured revision. A parser/analysis upgrade creates a labeled new
 baseline, retains old receipts, and awards no reduction or Work credit.

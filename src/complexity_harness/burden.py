@@ -16,13 +16,13 @@ from .complexity_languages import classify_path
 from .complexity_evidence import unpack, unpack_file, MAX_RECEIPT_BYTES, MAX_EXPANDED_BYTES, MAX_FILE_EVIDENCE_BYTES
 
 
-VERSION = "complexity-burden-v5"
-ANALYZER = "polyglot-v4/libcst-1.9.0/babel-7.29.8/v8-0.14.1/dart-0.1.0/css-1.5.1/openstep-2.0.3/pack-0.13.0/ts-0.25.2"
+VERSION = "complexity-burden-v6"
+ANALYZER = "polyglot-v5/libcst-1.9.0/babel-7.29.8/v8-0.14.1/dart-0.1.0/css-1.5.1/openstep-2.0.3/groovy-0.3.0/kotlin-1.1.0/swift-0.7.4/batch-0.11.1/ps-0.26.4/yaml-6.0.3/sqlglot-30.23.0/abnf-2.9.0/go-asm-1.25.3/pack-0.13.0/ts-0.25.2"
 # This is the admission contract, not a claim that every available grammar has
 # a validated complexity adapter. Native parser dependencies stay in producers.
-CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "c_header", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua"}
-STRUCTURAL_LANGUAGES = {"hcl", "sql", "css", "json", "yaml", "html", "dockerfile", "make", "toml", "xml", "graphql", "cmake", "protobuf", "config", "properties", "openstep"}
-MIXED_LANGUAGES = {"html"}
+CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "c_header", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua", "groovy", "nix", "starlark", "assembly", "batch", "gotemplate", "unknown", "nsis", "procfile", "just", "powershell"}
+STRUCTURAL_LANGUAGES = {"hcl", "sql", "css", "json", "yaml", "html", "dockerfile", "make", "toml", "xml", "graphql", "cmake", "protobuf", "config", "properties", "openstep", "gomod", "vue", "abnf", "shell_cases"}
+MIXED_LANGUAGES = {"html", "vue", "yaml", "make", "dockerfile", "gotemplate", "unknown"}
 MAX_SOURCE_FILES = 200000
 MAX_INVENTORY_FILES = 250000
 MAX_FUNCTIONS_PER_FILE = 100000
@@ -53,8 +53,9 @@ POLICY = {
     "meaning": "Measured control-flow burden, 0–100, higher is worse. This is an index of explicit decisions, not a probability of defects or total engineering difficulty. Declarative structure is diagnostic evidence only and never sets this score. Unsupported source stays unknown.",
     "calibration": "Fixed reference anchors, not population percentiles: a repository of functions with 0, 5, 14 or 24 decisions scores 0, 20.83, 58.33 or 100. Bands and the target are investigation thresholds, not empirically proven quality grades. Nesting and domain necessity require source review.",
     "anchors": [{"decisions": 0, "score": 0}, {"decisions": 5, "score": 20.83}, {"decisions": 14, "score": 58.33}, {"decisions": 24, "score": 100}],
-    "reduction_audit": "Counts recognized decisions in every function, closure and module. A lower score alone is insufficient: total control-flow decisions must fall, structural diagnostic points cannot increase, and changed unknown, data or excluded source blocks credit.",
+    "reduction_audit": "Counts recognized decisions in every function, closure and module. A lower score alone is insufficient: total control-flow decisions must fall, structural diagnostic points cannot increase, and changed unknown, diagnostic-only, template-data or excluded source blocks credit.",
     "structural_formula": "Diagnostic only: record container count, maximum nesting, excess levels beyond 3 and child containers beyond 8. These are not control-flow decisions and have no calibrated 0–100 score. Document-only repositories remain unmeasured on the main complexity map.",
+    "source_readers": 'Pinned native grammars and bounded static readers analyze source without executing repository code. Embedded JavaScript/TypeScript, CI scripts, shell recipes and explicit template conditions retain physical source lines. C/C++ macros are analyzed once as source fragments, not expanded at call sites. Plan 9/Go assembly uses Go 1.25.3 instruction tables and architecture-specific branch semantics.',
     "reduction_requires": ["comparable_complete_scan", "fewer_decisions", "exact_revision_behavior_checks", "merged_source"],
 }
 
@@ -63,6 +64,12 @@ def level(score):
     if score is None:
         return "Unmeasured"
     return next(band["label"] for band in reversed(POLICY["bands"]) if score >= band["minimum"])
+
+
+def coverage_percent(analyzed,eligible):
+    if not eligible:return None
+    value=round(100*analyzed/eligible,2)
+    return min(value,99.99) if analyzed<eligible else value
 
 
 def score_histogram(counts):
@@ -118,7 +125,7 @@ def measure_snapshot(snapshot):
     if not isinstance(rows, list) or not isinstance(unsupported, list) or len(rows) + len(unsupported) > MAX_SOURCE_FILES:
         raise ValueError("A bounded eligible source inventory is required")
     unknown = sorted(_path(path) for path in unsupported)
-    unknown_hashes = coverage.get("unsupported_hashes") or {}
+    unknown_hashes = dict(coverage.get("unsupported_hashes") or {})
     if any(not re.fullmatch(r"[0-9a-f]{64}", unknown_hashes.get(path, "")) for path in unknown):
         raise ValueError("Unmeasured source needs hashes to detect displaced complexity")
     seen = set(unknown)
@@ -163,6 +170,11 @@ def measure_snapshot(snapshot):
         seen.add(path)
         if not re.fullmatch(r"[0-9a-f]{64}", row.get("sha256") or ""):
             raise ValueError("Every measured file needs a content hash")
+        if not isinstance(row.get('structural',{}),dict) or 'unsupported' in row and type(row['unsupported']) is not bool:raise ValueError('Source adapter metadata must be correctly typed')
+        if row.get('unsupported'):
+            if row['language']!='unknown' or row.get('functions') or row.get('unattributed_branches') or row.get('parse_error')!='Unrecognized source format; no score assigned':
+                raise ValueError('Only unidentified source may use content-detection unsupported status')
+            unknown.append(path);unknown_hashes[path]=inventory_by_path[path]['sha256'];error_reasons[path]=row['parse_error'];continue
         if row.get("parse_error"):
             errors.append(path)
             error_reasons[path] = str(row["parse_error"])[:300]
@@ -258,23 +270,32 @@ def measure_snapshot(snapshot):
         language["support"] = "measured" if language["analyzed_files"]==language["eligible_files"] else "partial" if language["analyzed_files"] else "unsupported"
     files.sort(key=lambda row:row["path"])
     errors.sort()
+    unknown.sort()
     eligible = len(seen)
     scored_files = sum(file["metric_family"] == "control_flow" for file in files)
     diagnostic_files = len(files) - scored_files
     score_eligible_files = sum(row["eligible_files"]-row.get("diagnostic_only_files",0) for row in language_counts.values() if row["metric_family"] != "structure")
+    diagnostic_paths={file['path'] for file in files if file['metric_family']=='structure'}
+    literals=[]
+    for file in files:
+        fingerprint=file.get('structural',{}).get('unscored_source_sha256')
+        if fingerprint is not None:
+            if file['language'] not in {'gotemplate','yaml','c','cpp','c_header','assembly'} or not isinstance(fingerprint,str) or not re.fullmatch(r'[0-9a-f]{64}',fingerprint):raise ValueError('Unscored literal fingerprints must use the versioned source adapter')
+            literals.append((file['path'],fingerprint))
+    protected=sorted((p,e['sha256']) for p,e in inventory_by_path.items() if e['kind'] in {'excluded','generated','data','opaque'} or p in diagnostic_paths)
     return {"version": VERSION, "analyzer": ANALYZER, "source_sha": source["commit"],
         "scope_hash": coverage["scope_hash"], "score": score, "level": level(score),
         "coverage": {"eligible_files": eligible, "analyzed_files": len(files),
             "scored_files":scored_files,"diagnostic_files":diagnostic_files,"score_eligible_files":score_eligible_files,
-            "score_percent":round(100 * scored_files / score_eligible_files, 2) if score_eligible_files else None,
+            "score_percent":coverage_percent(scored_files,score_eligible_files),
             "unsupported_paths": unknown, "unsupported_hashes": unknown_hashes, "parse_error_paths": errors,
-            "percent": round(100 * len(files) / eligible, 2) if eligible else 0,
+            "percent": coverage_percent(len(files),eligible) if eligible else 0,
             "complete": bool(eligible) and not unknown and not errors,
             "measured_languages": sorted({row["language"] for row in files}),
             "languages":sorted(language_counts.values(),key=lambda row:row["language"]),
             "inventory_files":len(inventory),"inventory_counts":{kind:sum(e["kind"]==kind for e in inventory) for kind in sorted({e["kind"] for e in inventory})},
             "unmeasured": [{"path":p,"language":inventory_by_path[p]["language"],"reason":error_reasons.get(p) or inventory_by_path[p].get("reason") or "Parser or dialect unavailable"} for p in unknown+errors],
-            "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated","data","opaque"})).encode()).hexdigest()},
+            "excluded_fingerprint":hashlib.sha256(json.dumps([protected,sorted(literals)]).encode()).hexdigest()},
         "factors":factors,
         "summary": {"functions": sum(values.values()), "decisions": sum(file["decisions"] for file in files if file["metric_family"] == "control_flow"),
             "hotspots": sum(n for v,n in values.items() if v>=15), "very_high": sum(n for v,n in values.items() if v>=40),
@@ -291,7 +312,7 @@ def reduction_evidence(before, after):
     if before["coverage"]["parse_error_paths"] or after["coverage"]["parse_error_paths"]:
         reasons.append("Source parse errors prevent a comparable reduction")
     if before["coverage"].get("excluded_fingerprint") != after["coverage"].get("excluded_fingerprint"):
-        reasons.append("Changed excluded, generated or recorded data prevents a comparable reduction")
+        reasons.append("Changed unscored source, excluded files or recorded data prevents a comparable reduction")
     if before["coverage"].get("measured_languages") != after["coverage"].get("measured_languages"):
         reasons.append("Language coverage changed; establish a comparable baseline before credit")
     if any(after.get("factors",{}).get(family,{}).get("decisions",0) > before.get("factors",{}).get(family,{}).get("decisions",0) for family in set(before.get("factors",{})) | set(after.get("factors",{}))):

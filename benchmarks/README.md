@@ -1,111 +1,86 @@
 # Complexity calibration, 17 October 2026
 
-This validation uses 20 pinned public repositories as customer stand-ins across
-backend, frontend, mobile, systems, testing, infrastructure and data products.
-It never builds, imports or executes code from those repositories. Archives
-are read without extraction; commit and archive SHA-256 are pinned in
-`repositories-v1.json`. Recordings live outside the checkout; the compact
-versioned results and reference disagreement audit are committed here.
+Twenty pinned public repositories stand in for backend, frontend, mobile,
+systems, testing, infrastructure and data customers. The runner reads immutable
+archives without extracting, importing, building or executing customer code.
+Commit and archive SHA-256 pins live in `repositories-v1.json`.
 
-## What the number means
+## Meaning and verification
 
-`complexity-burden-v5` measures explicit control-flow decisions. The fixed
-anchors are 0, 5, 14 and 24 decisions → 0, 20.83, 58.33 and 100 load points.
-A repository combines 60% mean unit load and 40% highest-decile mean load.
-A product uses its highest repository score. These thresholds are policy
-choices for investigation, not an empirical prediction of defects, labor or
-maintainability. Large essential algorithms can score highly; source review
-must determine whether a reduction would help. Nesting is not cognitive load
-in this index. Saturation keeps the display bounded; raw counts remain visible.
+`complexity-burden-v6` measures explicit source decisions, not engineering time,
+defect probabilities or universal maintainability. A unit with 0, 5, 14 or 24
+decisions has load 0, 20.83, 58.33 or 100. A repository combines 60% mean load
+and 40% highest-decile mean load. The product uses its highest repository score.
+Nesting, domain necessity, coupling and duplication still require source review.
+Raw counts remain visible above the display's 24-decision saturation point.
 
-The initial v2 corpus showed document structure setting the score in 18 of
-19 completed repositories. Ordinary manifests and markup could dominate
-program logic. v3 preserves structural diagnostics without a common numeric
-scale. Document-only repositories have no primary score. An analysis upgrade
-is explicitly a new baseline; it earns no reduction credit.
+Declarative nesting and fan-out remain diagnostics without a calibrated score.
+Document-only repositories do not receive a healthy zero. Embedded control flow,
+including scripts, build recipes, template conditions and CI expressions,
+contributes to the programming index. Macro definitions are measured once as
+source, not expanded at each invocation. Changed unscored configuration,
+template data, unknown source or excluded data prevents reduction credit.
 
-## Validation and limitations
+An analyzer or classification upgrade establishes a labeled baseline, preserves
+historical receipts and earns no Work credit. Delivered Work requires fewer
+measured decisions, comparable source and policy, and successful durable behavior
+checks and CI on the exact merged revision before it can lower the accepted score.
 
-- 186 hand-specified construct cases span 17 programming-language adapters, including six newer-Python syntax cases.
-  They include defaults, closures, short circuits, guarded matches, loops,
-  propagation, type-only syntax, comments and strings. Counts are independent
-  expectations, not values copied from the analyzer. These cases drove fixes,
-  so their pass rate is regression evidence, not blind predictive accuracy.
-- Fixed anchor, concentration, population replication, dilution, displacement,
-  unknown-source and version-change tests protect score meaning and credit.
-- Lizard 1.24.1 provides an independent comparison across 15 languages. Dart
-  and Bash are covered by manual construct oracles, not that comparison.
-  Pairing uses unique start lines and records unmatched routines. Different
-  spans, nested closure ownership, nullable type syntax, preprocessor and
-  exception conventions prevent interpreting agreement as accuracy.
-- `reference-triage-v2.json` inspects the largest paired disagreement per
-  compared language with exact source links, spans and branch kinds. This
-  exposed missed Java enhanced loops and inappropriate Swift `try` counting.
-  Remaining differences include Lizard parsing type markers or empty Rust
-  closures as choices and grouping several routines into one span. Reviewed
-  counterexamples are retained in the construct oracle.
-- Python syntax uses pinned LibCST 1.9.0 independently of the producer interpreter.
-  Python 3.12 type aliases, generic definitions and newer f-strings, 3.13 type
-  parameter defaults, and 3.14 template strings and exception syntax have explicit
-  regression cases. Malformed or unsupported syntax remains unmeasured.
-- The corpus includes unsupported dialects, embedded templates, parser
-  failures and unknown source. No case is
-  silently omitted or assigned zero. Percentage coverage is file based,
-  not a guarantee about unparsed lines. Diagnostic documents do not inflate
-  the scored-source coverage shown beside the number.
-- The manifest's two cohorts were chosen before execution, but all initial
-  results were inspected. There is no blind holdout claim. There are no
-  human-rated complexity or actual customer engineering outcome labels.
+## Evidence and limits
+
+- 274 manually specified construct/syntax cases cover 26 language/dialect profiles, including six newer-Python cases. C/C++ headers and content-detected scripts have additional shared admission paths. Twenty declarative formats retain diagnostics. These regression checks are not a blind holdout or human-rated maintainability validation.
+- Lizard 1.24.1 supplies an independent comparison for 15 programming languages. Unique start-line pairing records unmatched routines. Agreement is diagnostic, not accuracy: closure ownership, preprocessor, type markers and exception conventions differ. Historical disagreement triage is retained in `reference-triage-v2.json`.
+- Pinned LibCST 1.9.0 parses Python 3.12–3.14 independently of the producer interpreter. Babel, tree-sitter grammars and static readers have versioned identities. Repository code is never executed or rendered.
+- Go/Plan 9 assembly uses Go 1.25.3 instruction tables, architecture-specific branches and conditional moves. `generate_go_opcodes.py` reproduces the vocabulary from a trusted SDK; source hashes and the Go license are retained. Other assembler dialects remain unsupported.
+- AngularJS common directives and JavaScript-compatible expressions are supported. Filters and unsupported expression dialects stay unmeasured. Caller-dependent C/C++ macro fragments, custom template dialects and customer DSLs also remain unknown when they cannot be fully analyzed. PowerShell's pinned grammar targets 5.1; unrecognized newer syntax stays unknown.
+- Conventional metadata, assets and recorded data are separately inventoried and fingerprinted. Coverage is file based; diagnostic-only files cannot inflate scored-source coverage. Partial coverage never rounds to 100%.
+- Budgets remain finite: 200,000 eligible source files, 250,000 inventory entries, 8 MiB per source file, 100,000 units per file, 12 MiB wire and 256 MiB expanded evidence. Capacity failures cannot establish a partial baseline. Exact histograms preserve all counts; only 1,000 hotspot examples enter the bounded projection.
 
 ## Results
 
-The v5 run completes all 20 pinned repositories: 18 scored and two diagnostic-only, with 15,050 analyzed files and 164,518 programming units. It replays the same immutable archives and exposes all remaining parse failures and unsupported source. Improvements in coverage establish a new baseline and never earn Work credit. Scored coverage excludes diagnostic-only documents and includes unknown source in its denominator.
+All 20 archives complete: 19 scored and 1 diagnostic-only, with 15,602 analyzed files and 167,690 programming units. The cohorts were selected before execution, but results were inspected; there is no blind performance claim.
 
-Capacity remains finite: 200,000 eligible source files, 250,000 inventory entries, 8 MB per source file, 100,000 units per file, 12 MB wire and 256 MB expanded evidence. Complete counts use exact histograms and bounded, lossless receipts. Only 1,000 hotspot examples are projected; all measured units contribute to the index.
+The large Skaffold sample improves from 95.43% to 99.97% scored-source coverage. All valid files behind its gaps are analyzed. Three incomplete Dockerfile examples remain unmeasured: two use `...` and one contains an empty `RUN`. This is not a claim that every future language, dialect or malformed customer file is supported.
 
-| Repository | Role | v4 | v5 | Scored source coverage | Parse failures | Unsupported |
+| Repository | Role | v5 | v6 | Scored source coverage | Parse failures | Unsupported |
 |---|---|---:|---:|---:|---:|---:|
-| [psf/requests](https://github.com/psf/requests/tree/0e322af87745eff34caffe4df68456ebc20d9068) | python | 14.08 | 14.07 | 68.52% | 2 | 17 |
-| [expressjs/express](https://github.com/expressjs/express/tree/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4) | javascript | 3.16 | 3.15 | 78.02% | 3 | 37 |
-| [vuejs/core](https://github.com/vuejs/core/tree/6eb29d345aa73746207f80c89ee8b37ff7b949c9) | typescript/tsx | 13.07 | 13.04 | 89.61% | 8 | 54 |
-| [go-chi/chi](https://github.com/go-chi/chi/tree/0a20a0e3400e551803f463d17a0ab84ee8afef3c) | go | 13.28 | 13.28 | 96.05% | 0 | 3 |
-| [DapperLib/Dapper](https://github.com/DapperLib/Dapper/tree/bd4f75b512de3e00f2c2631d5309961a1ecfea23) | csharp | 6.52 | 6.52 | 84.15% | 1 | 28 |
-| [spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic/tree/500158f732419217507c7656904b8e6aa1bcc0d6) | java | 7.73 | 7.71 | 78.46% | 5 | 14 |
-| [sinatra/sinatra](https://github.com/sinatra/sinatra/tree/7b50a1bbb5324838908dfaa00ec53ad322673a29) | ruby | 4.0 | 4.0 | 60.23% | 0 | 103 |
+| [psf/requests](https://github.com/psf/requests/tree/0e322af87745eff34caffe4df68456ebc20d9068) | python | 14.07 | 14.67 | 93.48% | 0 | 3 |
+| [expressjs/express](https://github.com/expressjs/express/tree/cd7d4397c398a3f3ecadeaf9ef6ac1377bd414c4) | javascript | 3.15 | 3.18 | 81.92% | 8 | 24 |
+| [vuejs/core](https://github.com/vuejs/core/tree/6eb29d345aa73746207f80c89ee8b37ff7b949c9) | typescript/tsx | 13.04 | 12.97 | 99.29% | 0 | 4 |
+| [go-chi/chi](https://github.com/go-chi/chi/tree/0a20a0e3400e551803f463d17a0ab84ee8afef3c) | go | 13.28 | 13.28 | 100.0% | 0 | 0 |
+| [DapperLib/Dapper](https://github.com/DapperLib/Dapper/tree/bd4f75b512de3e00f2c2631d5309961a1ecfea23) | csharp | 6.52 | 9.35 | 100.0% | 0 | 0 |
+| [spring-projects/spring-petclinic](https://github.com/spring-projects/spring-petclinic/tree/500158f732419217507c7656904b8e6aa1bcc0d6) | java | 7.71 | 11.59 | 91.94% | 3 | 4 |
+| [sinatra/sinatra](https://github.com/sinatra/sinatra/tree/7b50a1bbb5324838908dfaa00ec53ad322673a29) | ruby | 4.0 | 4.27 | 66.15% | 0 | 87 |
 | [slimphp/Slim](https://github.com/slimphp/Slim/tree/5943393b88716eb9e82c4161caa956af63423913) | php | 10.66 | 10.66 | 100.0% | 0 | 0 |
-| [tokio-rs/axum](https://github.com/tokio-rs/axum/tree/c59208c86fded335cd85e388030ad59347b0e5ae) | rust | 7.9 | 7.88 | 85.84% | 0 | 50 |
-| [dart-lang/shelf](https://github.com/dart-lang/shelf/tree/2536c15a562cb183dabbc628824a215663830325) | dart | 18.86 | 18.96 | 100.0% | 0 | 0 |
-| [Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization/tree/f9f160a680da9f92c3bb121ae3644c96e57ba42e) | kotlin | 5.07 | 5.07 | 94.67% | 143 | 22 |
-| [apple/swift-http-types](https://github.com/apple/swift-http-types/tree/ef18d829e8b92d731ad27bb81583edd2094d1ce3) | swift | 17.87 | 17.87 | 76.19% | 3 | 2 |
-| [libuv/libuv](https://github.com/libuv/libuv/tree/8fb9cb919489a48880680a56efecff6a7dfb4504) | c | 20.27 | 23.7 | 79.06% | 63 | 18 |
-| [fmtlib/fmt](https://github.com/fmtlib/fmt/tree/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2) | cpp | 20.1 | 19.07 | 46.74% | 34 | 15 |
-| [lunarmodules/busted](https://github.com/lunarmodules/busted/tree/02f31a9c103a44e166617cfdb6ba1b8994a9c912) | lua | 10.47 | 10.47 | 79.51% | 1 | 24 |
-| [bats-core/bats-core](https://github.com/bats-core/bats-core/tree/b640ec3cf2c7c9cfc9e6351479261186f76eeec8) | bash | 18.88 | 18.88 | 16.83% | 1 | 251 |
-| [terraform-aws-modules/terraform-aws-vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc/tree/961c9b51e3ed3959d9419f019e7085c087bf7297) | hcl | diagnostic only | diagnostic only | 0.0% | 0 | 1 |
-| [dbt-labs/jaffle-shop](https://github.com/dbt-labs/jaffle-shop/tree/5beb145b00f5465ec759cfcdd9745e858818cf95) | sql/jinja | 11.67 | 11.67 | 12.5% | 15 | 7 |
-| [necolas/normalize.css](https://github.com/necolas/normalize.css/tree/fc091cce1534909334c1911709a39c22d406977b) | css | diagnostic only | diagnostic only | 0.0% | 0 | 1 |
-| [GoogleContainerTools/skaffold](https://github.com/GoogleContainerTools/skaffold/tree/f132ab25adf1599c7fbdce733144991126565386) | yaml/json | 21.76 | 21.66 | 95.43% | 77 | 477 |
+| [tokio-rs/axum](https://github.com/tokio-rs/axum/tree/c59208c86fded335cd85e388030ad59347b0e5ae) | rust | 7.88 | 7.88 | 98.38% | 1 | 4 |
+| [dart-lang/shelf](https://github.com/dart-lang/shelf/tree/2536c15a562cb183dabbc628824a215663830325) | dart | 18.96 | 20.08 | 100.0% | 0 | 0 |
+| [Kotlin/kotlinx.serialization](https://github.com/Kotlin/kotlinx.serialization/tree/f9f160a680da9f92c3bb121ae3644c96e57ba42e) | kotlin | 5.07 | 5.81 | 100.0% | 127 | 0 |
+| [apple/swift-http-types](https://github.com/apple/swift-http-types/tree/ef18d829e8b92d731ad27bb81583edd2094d1ce3) | swift | 17.87 | 16.75 | 100.0% | 0 | 0 |
+| [libuv/libuv](https://github.com/libuv/libuv/tree/8fb9cb919489a48880680a56efecff6a7dfb4504) | c | 23.7 | 23.86 | 80.26% | 66 | 9 |
+| [fmtlib/fmt](https://github.com/fmtlib/fmt/tree/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2) | cpp | 19.07 | 19.83 | 53.76% | 38 | 5 |
+| [lunarmodules/busted](https://github.com/lunarmodules/busted/tree/02f31a9c103a44e166617cfdb6ba1b8994a9c912) | lua | 10.47 | 10.59 | 86.89% | 1 | 15 |
+| [bats-core/bats-core](https://github.com/bats-core/bats-core/tree/b640ec3cf2c7c9cfc9e6351479261186f76eeec8) | bash | 18.88 | 25.47 | 23.39% | 4 | 222 |
+| [terraform-aws-modules/terraform-aws-vpc](https://github.com/terraform-aws-modules/terraform-aws-vpc/tree/961c9b51e3ed3959d9419f019e7085c087bf7297) | hcl | diagnostic only | 7.08 | 100.0% | 0 | 0 |
+| [dbt-labs/jaffle-shop](https://github.com/dbt-labs/jaffle-shop/tree/5beb145b00f5465ec759cfcdd9745e858818cf95) | sql/jinja | 11.67 | 11.67 | 50.0% | 15 | 1 |
+| [necolas/normalize.css](https://github.com/necolas/normalize.css/tree/fc091cce1534909334c1911709a39c22d406977b) | css | diagnostic only | diagnostic only | 0.0% | 1 | 0 |
+| [GoogleContainerTools/skaffold](https://github.com/GoogleContainerTools/skaffold/tree/f132ab25adf1599c7fbdce733144991126565386) | yaml/json | 21.66 | 21.6 | 99.97% | 3 | 0 |
 
 ## Reproduce
 
-Install `.[dev]` in an isolated environment (the independent analyzer is a dev
-dependency, not a customer runtime dependency), then run:
+Install `.[dev]` in an isolated environment, then run:
 
 ```sh
 python -m pytest
 python benchmarks/run.py --cache /absolute/cache --output /absolute/results
-python benchmarks/triage.py --report /absolute/results/report.json --cache /absolute/cache --output /absolute/reference-triage.json
+python benchmarks/summarize.py --report /absolute/results/report.json --before /absolute/v5/report.json --output benchmarks/calibration-v4.json
 ```
 
-`--write-digests` is only for deliberately pinning a new manifest. Normal runs
-reject archive digest changes. Downloads have a 128 MB compressed bound and
-512 MB expanded bound; runtime ingestion retains its stricter existing limits.
-The full before/after receipts are retained in the local acceptance evidence.
+The independent analyzer is a dev dependency. `--write-digests` is only for
+pinning a new manifest; ordinary runs reject archive digest changes. Validation
+archives have a 128 MiB compressed and 512 MiB expanded bound. Native ingestion
+retains its stricter transport limits. Full receipts stay in local acceptance
+evidence; compact results and hashes are committed in `calibration-v4.json`.
 
-Independent methodology references: [Lizard](https://github.com/terryyin/lizard)
-and [Sonar's complexity definitions](https://docs.sonarsource.com/sonarqube-server/2025.1/user-guide/code-metrics/metrics-definition).
-Our declared conventions and exact branch evidence are the measurement contract.
-
-## v5 coverage validation
-
-The same 20 pinned repositories are replayed with 202 hand-specified construct/syntax cases. The v5 disclosure is `calibration-v3.json`; it accounts for 15,050 analyzed files and 164,518 programming units. Seventeen programming languages, a C/C++ header adapter and sixteen declarative-format adapters are validated. The old 100-file preview gap is resolved by measuring 92 more files and separately classifying eight private/document/resource files, while retaining their inventory fingerprints. Full coverage on that baseline is not a claim that every future customer language or dialect is supported.
+Methodology references: [Lizard](https://github.com/terryyin/lizard) and
+[Sonar complexity definitions](https://docs.sonarsource.com/sonarqube-server/2025.1/user-guide/code-metrics/metrics-definition).
+Our explicit conventions and branch evidence remain the measurement contract.

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "complexity-harness"
-version = "0.6.0"
+version = "0.7.0"
 description = "Inventory-aware complexity snapshots, architectural memory, and bounded refactor jobs"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -29,6 +29,14 @@ dependencies = [
   "mini-racer==0.14.1",
   "tinycss2==1.5.1",
   "openstep-parser==2.0.3",
+  "dekobon-tree-sitter-groovy==0.3.0",
+  "tree-sitter-kotlin==1.1.0",
+  "tree-sitter-swift==0.7.4",
+  "sqlglot==30.23.0",
+  "abnf==2.9.0",
+  "tree-sitter-batch==0.11.1",
+  "tree-sitter-powershell==0.26.4",
+  "PyYAML==6.0.3",
 ]
 
 [project.optional-dependencies]

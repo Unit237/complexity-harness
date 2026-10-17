@@ -65,7 +65,7 @@ def capture(row,archive_path):
                     except UnicodeDecodeError:metric=None
                     if metric:
                         files.append(pack_file(asdict(metric)))
-                        if not metric.parse_error and language in CONTROL_LANGUAGES and language not in {'dart','bash'}:
+                        if not metric.parse_error and language in {'python','javascript','typescript','tsx','c','c_header','cpp','csharp','java','go','rust','ruby','php','kotlin','swift','lua'}:
                             reference=lizard.analyze_file.analyze_source_code(path,data.decode('utf-8')).function_list
                             own_by_line=defaultdict(list);ref_by_line=defaultdict(list)
                             for f in metric.functions:own_by_line[f.line].append(f)

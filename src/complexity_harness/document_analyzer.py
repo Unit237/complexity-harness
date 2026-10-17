@@ -4,6 +4,70 @@ from importlib.metadata import version
 from .models import BranchEvidence, FileMetric, FunctionMetric
 
 
+def analyze_sql(data,base):
+    try:
+        import sqlglot
+        from sqlglot import exp
+        if version('sqlglot')!='30.23.0':raise ValueError('SQL parser differs from analysis contract')
+        source=data.decode('utf-8-sig');trees=None
+        for dialect in (None,'postgres','mysql','snowflake','tsql'):
+            try:
+                candidate=sqlglot.parse(source,read=dialect,error_level=sqlglot.ErrorLevel.RAISE)
+                if any(tree and tree.find(exp.Command) for tree in candidate):continue
+                trees=candidate;break
+            except sqlglot.errors.ParseError:continue
+        if trees is None:raise ValueError('Unsupported SQL dialect')
+        branches=[];containers=depth=0
+        for tree in trees:
+            if tree is None:continue
+            stack=[(tree,0)]
+            while stack:
+                node,level=stack.pop()
+                if isinstance(node,(exp.Query,exp.Join,exp.CTE,exp.Case,exp.Subquery)):
+                    level+=1;containers+=1;depth=max(depth,level)
+                    line=min(max(1,base['lines']),node.meta.get('line',1))
+                    if level>3:branches.append(BranchEvidence('nesting-excess',line,level-3))
+                stack.extend((child,level) for child in node.iter_expressions())
+        return FileMetric(**base,functions=(FunctionMetric('<document>',1,1,max(1,base['lines']),1+sum(b.contribution for b in branches),tuple(branches)),),structural={'containers':containers,'max_depth':depth,'nesting_points':sum(b.contribution for b in branches),'fanout_points':0})
+    except Exception as exc:return FileMetric(**base,parse_error=f'SQL syntax unavailable: {type(exc).__name__}')
+
+
+def analyze_configuration(data,base,language):
+    """Real INI/XML readers handle optional newlines, continuation lines and BOMs."""
+    try:
+        if language=='config':
+            import configparser
+            parser=configparser.ConfigParser(interpolation=None,strict=False)
+            parser.read_string('[DEFAULT]\n'+data.decode('utf-8-sig'))
+            root={section:dict(parser[section]) for section in parser.sections()}
+            root['DEFAULT']=dict(parser.defaults())
+            pending=[(root,1)]
+        else:
+            import plistlib
+            from xml.etree import ElementTree
+            if data.startswith(b'bplist'):
+                pending=[(plistlib.loads(data),1)]
+            else:
+                pending=[(ElementTree.fromstring(data),1)]
+        depth=containers=0;branches=[]
+        while pending:
+            item,level=pending.pop()
+            if isinstance(item,(dict,list)):
+                children=[child for child in (item.values() if isinstance(item,dict) else item) if isinstance(child,(dict,list))]
+            elif hasattr(item,'tag'):children=list(item)
+            else:continue
+            containers+=1;depth=max(depth,level)
+            if level>3:branches.append(BranchEvidence('nesting-excess',1,level-3))
+            if len(children)>8:branches.append(BranchEvidence('fanout-excess',1,len(children)-8))
+            pending.extend((child,level+1) for child in children)
+        unit=FunctionMetric('<document>',1,1,max(1,base['lines']),1+sum(b.contribution for b in branches),tuple(branches))
+        return FileMetric(**base,functions=(unit,),structural={'containers':containers,'max_depth':depth,
+            'nesting_points':sum(b.contribution for b in branches if b.kind=='nesting-excess'),
+            'fanout_points':sum(b.contribution for b in branches if b.kind=='fanout-excess')})
+    except Exception as exc:
+        return FileMetric(**base,parse_error=f'Configuration syntax unavailable: {type(exc).__name__}')
+
+
 def analyze_document(data, base, language):
     try:
         text = data.decode("utf-8-sig")
