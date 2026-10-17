@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "complexity-harness"
-version = "0.4.0"
+version = "0.5.0"
 description = "Inventory-aware complexity snapshots, architectural memory, and bounded refactor jobs"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -19,6 +19,7 @@ classifiers = [
   "Topic :: Software Development :: Quality Assurance",
 ]
 dependencies = [
+  "libcst==1.9.0",
   "tree-sitter-language-pack==0.13.0",
   "tree-sitter==0.25.2",
   "tree-sitter-c-sharp==0.23.5",

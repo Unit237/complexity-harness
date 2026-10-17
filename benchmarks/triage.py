@@ -8,6 +8,7 @@ import json
 from pathlib import Path
 import tarfile
 import lizard
+from complexity_harness.complexity_evidence import unpack_file
 
 
 def main():
@@ -26,7 +27,7 @@ def main():
             member=next(m for m in source if '/'.join(m.name.split('/')[1:])==item['path'])
             data=source.extractfile(member).read().decode('utf-8')
         snapshot=json.loads((report_path.parent/(repo['repository'].replace('/','--')+'.snapshot.json')).read_text())
-        file=next(f for f in snapshot['files'] if f['path']==item['path'])
+        file=unpack_file(next(f for f in snapshot['files'] if f['path']==item['path']))
         own=next(f for f in file['functions'] if f['line']==item['line'])
         ref=next(f for f in lizard.analyze_file.analyze_source_code(item['path'],data).function_list if f.start_line==item['line'])
         nested=[f for f in file['functions'] if own['line']<f['line']<=own['end_line']]

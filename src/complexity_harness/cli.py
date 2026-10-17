@@ -25,7 +25,7 @@ def _scan_command(args: argparse.Namespace) -> int:
     payload = scan_repository(
         args.path,
         architectural_memory_path=args.memory,
-    ).as_dict()
+    ).as_dict(compact=args.compact)
     if args.output:
         write_json(args.output, payload)
     else:
@@ -150,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     scan.add_argument("path", nargs="?", default=".")
     scan.add_argument("--output")
     scan.add_argument("--memory")
+    scan.add_argument("--compact", action="store_true", help="Compress per-file branch evidence losslessly for large source inventories")
 
     workspace_scan = sub.add_parser("workspace-scan")
     workspace_scan.add_argument("path", nargs="?", default=".")

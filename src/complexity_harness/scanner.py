@@ -12,7 +12,7 @@ from .models import Snapshot
 from .polyglot_analyzer import analyze_bytes
 from .burden import CONTROL_LANGUAGES, STRUCTURAL_LANGUAGES
 from .complexity_languages import classify_path
-from .burden import ANALYZER
+from .burden import ANALYZER, MAX_SOURCE_BYTES
 from .source_scope import _is_excluded, source_policy, content_fingerprint
 
 
@@ -66,7 +66,7 @@ def scan_repository(
         if _is_excluded(relative,directory_names=exclude_names,patterns=patterns,workspace_path=workspace_path):
             entry.update(kind="excluded",reason="Repository exclusion policy")
         eligible = entry["kind"] in {"source","unknown","opaque"}
-        if eligible and not path.is_symlink() and len(data)<=512*1024 and entry["language"] in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES:
+        if eligible and not path.is_symlink() and len(data)<=MAX_SOURCE_BYTES and entry["language"] in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES:
             try:
                 metric = analyze_bytes(data,relative_path=name,language=entry["language"])
                 files.append(metric)

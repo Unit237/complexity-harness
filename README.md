@@ -91,7 +91,7 @@ Configuration is optional at `.complexity/config.json`:
 complexity-harness burden /tmp/before.json
 ```
 
-`complexity-burden-v3` maps explicit control-flow decisions onto 0–100;
+`complexity-burden-v4` maps explicit control-flow decisions onto 0–100;
 higher is worse. A unit with 0 / 5 / 14 / 24 decisions has a fixed load of
 0 / 20.83 / 58.33 / 100. The repository combines 60% mean load with 40% mean
 highest-decile load; the highest repository sets the product score. These are
@@ -106,7 +106,7 @@ misleading; document-only repositories are now unmeasured on the main map.
 This version change establishes a baseline and earns no Work credit.
 
 See [benchmarks/README.md](benchmarks/README.md) for the pinned public corpus,
-180 construct oracles, independent comparison, results and limitations. Public
+186 construct oracles, independent comparison, results and limitations. Public
 repositories are customer stand-ins, not actual customer outcome validation.
 
 The scan inventories every Git-visible file, including `.mjs`, `.cc`, shell,
@@ -115,7 +115,8 @@ assets, recorded report/fixture data, generated/lock files and exclusions are co
 languages, unsupported dialects, parse errors, mixed embedded templates,
 symlinks and oversized files remain unmeasured with content fingerprints.
 Customer source is never executed. The broker uses bundled parsers offline and
-returns measurements, never source bodies. Python uses the stdlib AST; other
+returns measurements, never source bodies. Python uses pinned LibCST 1.9.0 to
+parse Python 3.12–3.14 syntax independently of the producer's interpreter; other
 adapters pin tree-sitter-language-pack 0.13.0 and tree-sitter 0.25.2. Available
 grammars are not automatically advertised as validated complexity adapters.
 
@@ -282,10 +283,22 @@ The core never imports an agent SDK or gives the executor broader authority.
 
 ## Current support and honest limits
 
-Python analysis uses the stdlib AST. The validated adapter list is declared in
+Python analysis uses a bundled CST grammar. The validated adapter list is declared in
 `burden.py`, with independent corpus cases in `test_polyglot.py`. Unrecognized
 source stays in coverage as unknown. Coupling, semantic duplication and business
 necessity still require source investigation; this index does not certify them.
+
+Large scans retain exact histograms and every unit's immutable branch evidence;
+only investigation examples are capped at 1,000. Lossless compressed evidence
+supports a 12 MB wire / 256 MB expanded budget, up to 200,000 eligible source
+files and 250,000 inventory entries. Individual source files have a 512 KB parsing
+budget and a 100,000-unit ceiling. Capacity failures cannot publish partial
+baselines. Use `scan --compact` for per-file compressed output. The broker
+resumes bounded passes, reuses evidence only for unchanged Git blobs, and
+enumerates immutable subtrees when GitHub truncates its recursive response.
+The API pages and searches the source map in batches of 200. The pinned Skaffold
+corpus now measures 111,693 programming units with 94.35% scored-source coverage;
+its unknown files remain unmeasured. These limits are not an unlimited-size claim.
 
 The harness also deliberately does **not**:
 

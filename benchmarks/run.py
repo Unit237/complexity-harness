@@ -16,6 +16,7 @@ import urllib.request
 import lizard
 from importlib.metadata import version
 from complexity_harness.burden import ANALYZER,CONTROL_LANGUAGES,STRUCTURAL_LANGUAGES,measure_snapshot
+from complexity_harness.complexity_evidence import pack_file
 from complexity_harness.complexity_languages import classify_path
 from complexity_harness.polyglot_analyzer import analyze_bytes
 from complexity_harness.source_scope import source_policy,_is_excluded,content_fingerprint
@@ -45,7 +46,7 @@ def capture(row,archive_path):
     directories,patterns,scope_hash=source_policy({})
     with tarfile.open(archive_path,'r:gz') as archive:
         members=[m for m in archive if m.isfile() or m.issym() or m.islnk()]
-        if len(members)>50000:raise ValueError('Corpus exceeds bounded inventory')
+        if len(members)>250000:raise ValueError('Corpus exceeds bounded inventory')
         total=0
         for member in sorted(members,key=lambda m:m.name):
             relative=PurePosixPath(*PurePosixPath(member.name).parts[1:])
@@ -63,7 +64,7 @@ def capture(row,archive_path):
                     try:metric=analyze_bytes(data,relative_path=path,language=language)
                     except UnicodeDecodeError:metric=None
                     if metric:
-                        files.append(asdict(metric))
+                        files.append(pack_file(asdict(metric)))
                         if not metric.parse_error and language in CONTROL_LANGUAGES and language not in {'dart','bash'}:
                             reference=lizard.analyze_file.analyze_source_code(path,data.decode('utf-8')).function_list
                             own_by_line=defaultdict(list);ref_by_line=defaultdict(list)

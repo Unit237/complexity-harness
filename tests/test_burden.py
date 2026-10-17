@@ -22,7 +22,7 @@ def snapshot(values=(25,), sha="a", path="service.py"):
 
 
 def test_fixed_policy_and_gold_cases_preserve_hotspot_tail_and_direction():
-    assert POLICY == json.loads((ROOT/"contracts/complexity-burden-v3.json").read_text())
+    assert POLICY == json.loads((ROOT/"contracts/complexity-burden-v4.json").read_text())
     for case in json.loads((ROOT/"tests/fixtures/burden-gold-v1.json").read_text()):
         assert score_values(case["values"]) == case["score"]
         assert level(case["score"]) == case["level"]

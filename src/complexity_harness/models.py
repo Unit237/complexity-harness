@@ -60,7 +60,8 @@ class Snapshot:
     schema_version: str = "complexity-snapshot-v1"
     coverage: dict[str, Any] = field(default_factory=dict)
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self, *, compact=False) -> dict[str, Any]:
+        from .complexity_evidence import pack_file
         return {
             "schema_version": self.schema_version,
             "repository": self.repository,
@@ -71,7 +72,7 @@ class Snapshot:
                 "findings": len(self.findings),
                 "architectural_memory_entries": len(self.architectural_memory),
             },
-            "files": [asdict(row) | {"max_cyclomatic": row.max_cyclomatic} for row in self.files],
+            "files": [pack_file(asdict(row)) if compact else asdict(row) | {"max_cyclomatic": row.max_cyclomatic} for row in self.files],
             "findings": [asdict(row) for row in self.findings],
             "architectural_memory": self.architectural_memory,
         }

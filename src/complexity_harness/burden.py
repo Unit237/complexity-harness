@@ -5,24 +5,36 @@ universal maintainability or semantic duplication. Missing languages never recei
 """
 from __future__ import annotations
 
+from collections import Counter
 import hashlib
+import heapq
 import json
 import math
 from pathlib import PurePosixPath
 import re
 from .complexity_languages import classify_path
+from .complexity_evidence import unpack, unpack_file, MAX_RECEIPT_BYTES, MAX_EXPANDED_BYTES, MAX_FILE_EVIDENCE_BYTES
 
 
-VERSION = "complexity-burden-v3"
-ANALYZER = "polyglot-ast-v2/pack-0.13.0/ts-0.25.2"
+VERSION = "complexity-burden-v4"
+ANALYZER = "polyglot-cst-v3/libcst-1.9.0/pack-0.13.0/ts-0.25.2"
 # This is the admission contract, not a claim that every available grammar has
 # a validated complexity adapter. Native parser dependencies stay in producers.
 CONTROL_LANGUAGES = {"python", "javascript", "typescript", "tsx", "c", "cpp", "csharp", "java", "go", "rust", "ruby", "php", "kotlin", "swift", "dart", "bash", "lua"}
 STRUCTURAL_LANGUAGES = {"hcl", "sql", "css", "json", "yaml", "html", "dockerfile", "make", "toml", "xml", "graphql"}
+MAX_SOURCE_FILES = 200000
+MAX_INVENTORY_FILES = 250000
+MAX_FUNCTIONS_PER_FILE = 100000
+MAX_INVESTIGATION_EXAMPLES = 1000
+MAX_SOURCE_BYTES = 512 * 1024
 POLICY = {
     "version": VERSION,
     "analyzer": ANALYZER,
-    "python_grammar": "3.11 (pinned across producer runtimes; newer syntax remains unmeasured)",
+    "python_grammar": "Python 3.14 syntax; LibCST 1.9.0, independent of producer interpreter",
+    "limits": {"source_files":MAX_SOURCE_FILES,"inventory_files":MAX_INVENTORY_FILES,
+        "functions_per_file":MAX_FUNCTIONS_PER_FILE,"investigation_examples":MAX_INVESTIGATION_EXAMPLES,
+        "source_file_bytes":MAX_SOURCE_BYTES,"wire_bytes":MAX_RECEIPT_BYTES,"expanded_bytes":MAX_EXPANDED_BYTES,
+        "file_evidence_bytes":MAX_FILE_EVIDENCE_BYTES},
     "decision_ceiling": 24,
     "mean_weight": 0.6,
     "tail_weight": 0.4,
@@ -52,13 +64,24 @@ def level(score):
     return next(band["label"] for band in reversed(POLICY["bands"]) if score >= band["minimum"])
 
 
-def score_values(values):
-    if not values:
+def score_histogram(counts):
+    """Exact weighted mean/tail; never expand the repository's function population."""
+    count=sum(counts.values())
+    if not count:
         return None
-    loads = sorted((min((value - 1) / POLICY["decision_ceiling"], 1) for value in values), reverse=True)
-    tail = loads[:max(1, math.ceil(len(loads) * POLICY["tail_fraction"]))]
-    return round(100 * (POLICY["mean_weight"] * sum(loads) / len(loads)
-                        + POLICY["tail_weight"] * sum(tail) / len(tail)), 2)
+    tail_count=max(1,math.ceil(count*POLICY["tail_fraction"]))
+    remaining,tail=tail_count,0
+    for value,n in sorted(counts.items(),reverse=True):
+        taken=min(n,remaining)
+        tail+=taken*min((value-1)/POLICY["decision_ceiling"],1)
+        remaining-=taken
+        if not remaining:break
+    mean=sum(n*min((value-1)/POLICY["decision_ceiling"],1) for value,n in sorted(counts.items()))/count
+    return round(100*(POLICY["mean_weight"]*mean+POLICY["tail_weight"]*tail/tail_count),2)
+
+
+def score_values(values):
+    return score_histogram(Counter(values))
 
 
 def score_repositories(scores):
@@ -78,6 +101,7 @@ def _path(value):
 
 def measure_snapshot(snapshot):
     """Recompute from branch evidence; never trust producer-supplied scores."""
+    snapshot = unpack(snapshot)
     if snapshot.get("schema_version") != "complexity-snapshot-v1":
         raise ValueError("A repository Complexity Harness snapshot is required")
     source = snapshot.get("repository") or {}
@@ -90,9 +114,9 @@ def measure_snapshot(snapshot):
         raise ValueError("Measurements require a clean, commit-bound source tree")
     rows = snapshot.get("files")
     unsupported = coverage.get("unsupported_paths")
-    if not isinstance(rows, list) or not isinstance(unsupported, list) or len(rows) + len(unsupported) > 20000:
+    if not isinstance(rows, list) or not isinstance(unsupported, list) or len(rows) + len(unsupported) > MAX_SOURCE_FILES:
         raise ValueError("A bounded eligible source inventory is required")
-    unknown = [_path(path) for path in unsupported]
+    unknown = sorted(_path(path) for path in unsupported)
     unknown_hashes = coverage.get("unsupported_hashes") or {}
     if any(not re.fullmatch(r"[0-9a-f]{64}", unknown_hashes.get(path, "")) for path in unknown):
         raise ValueError("Unmeasured source needs hashes to detect displaced complexity")
@@ -102,7 +126,7 @@ def measure_snapshot(snapshot):
     if "eligible_files" in coverage and coverage["eligible_files"] != len(rows) + len(unknown):
         raise ValueError("Every eligible source file must be accounted for")
     inventory = coverage.get("inventory")
-    if coverage.get("inventory_policy") != "all-files-v2" or not isinstance(inventory,list) or len(inventory)>50000:
+    if coverage.get("inventory_policy") != "all-files-v2" or not isinstance(inventory,list) or len(inventory)>MAX_INVENTORY_FILES:
         raise ValueError("A complete, versioned all-file inventory is required")
     inventory_by_path = {}
     for entry in inventory:
@@ -118,13 +142,20 @@ def measure_snapshot(snapshot):
         raise ValueError("Every eligible file must be accounted for in the full inventory")
     if any(inventory_by_path[p]["sha256"] != unknown_hashes[p] for p in unknown):
         raise ValueError("Unknown source fingerprints must match the inventory")
-    files, values, findings = [], [], []
+    files, values, findings = [], Counter(), []
+    # Receipts retain all counts. Only investigation examples are bounded.
+    def retain(finding):
+        priority=(finding["metric_family"]!="structure",finding["cyclomatic"],finding["id"])
+        entry=(priority,finding)
+        if len(findings)<MAX_INVESTIGATION_EXAMPLES:heapq.heappush(findings,entry)
+        elif priority>findings[0][0]:heapq.heapreplace(findings,entry)
     factors, language_counts = {}, {}
     for entry in inventory:
         if entry["path"] in expected:
             language_counts.setdefault(entry["language"], {"language":entry["language"],"eligible_files":0,"analyzed_files":0,"support":"unsupported", "metric_family":"control_flow" if entry["language"] in CONTROL_LANGUAGES else "structure" if entry["language"] in STRUCTURAL_LANGUAGES else "unknown"})["eligible_files"] += 1
     errors, error_reasons = [], {}
-    for row in rows:
+    for encoded_row in rows:
+        row = unpack_file(encoded_row)
         path = _path(row.get("path"))
         if path in seen or row.get("language") not in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES or row.get("language") != inventory_by_path[path]["language"]:
             raise ValueError("Measured source paths must be unique and correctly typed")
@@ -152,9 +183,10 @@ def measure_snapshot(snapshot):
                 raise ValueError("Unattributed branch evidence must lie inside its source file")
             outside_decisions += contribution
         functions = row.get("functions")
-        if not isinstance(functions, (list, tuple)) or len(functions) > 10000:
+        if not isinstance(functions, (list, tuple)) or len(functions) > MAX_FUNCTIONS_PER_FILE:
             raise ValueError("A bounded function inventory is required")
-        local = []
+        local = Counter()
+        identities = set()
         for function in functions:
             value = function.get("cyclomatic")
             line, end = function.get("line"), function.get("end_line")
@@ -163,6 +195,10 @@ def measure_snapshot(snapshot):
                     or type(end) is not int or not 1 <= line <= end <= max(1,row["lines"]) or not isinstance(branches, (list, tuple))
                     or not isinstance(function.get("symbol"), str) or not function["symbol"]):
                 raise ValueError("Function measurements need valid symbols, spans and complexity")
+            identity_key = (function["symbol"],function.get("occurrence",0))
+            if identity_key in identities:
+                raise ValueError("Function identities must be unique within a source file")
+            identities.add(identity_key)
             total = 0
             for branch in branches:
                 contribution = branch.get("contribution", 1)
@@ -172,36 +208,36 @@ def measure_snapshot(snapshot):
                 total += contribution
             if total + 1 != value:
                 raise ValueError("Cyclomatic complexity must reconstruct from branch evidence")
-            local.append(value)
+            local[value] += 1
             if value >= 15:
                 identity = hashlib.sha256(f"{path}:{function['symbol']}:{function.get('occurrence', 0)}".encode()).hexdigest()[:16]
-                findings.append({"id": "CYC-" + identity, "path": path, "symbol": function["symbol"],
+                retain({"id": "CYC-" + identity, "path": path, "symbol": function["symbol"],
                     "line": line, "end_line": end, "cyclomatic": value,
                     "branches": branches[:100], "branch_count": len(branches), "language":row["language"],"metric_family":family,
                     "explanation": "Excess nesting or fan-out warrants structural investigation." if family=="structure" else "Independent control-flow decisions warrant investigation; this is not proof of a defect."})
         if outside_decisions:
-            local.append(outside_decisions+1)
+            local[outside_decisions+1] += 1
         if family == "control_flow":
-            values.extend(local)
-        factor = factors.setdefault(family,{"values":[],"decisions":0,"files":0})
-        factor["values"].extend(local)
-        factor["decisions"] += sum(v-1 for v in local)
+            values.update(local)
+        factor = factors.setdefault(family,{"values":Counter(),"decisions":0,"files":0})
+        factor["values"].update(local)
+        factor["decisions"] += sum((v-1)*n for v,n in local.items())
         factor["files"] += 1
-        if len(values) > 100000:
-            raise ValueError("Function inventory exceeds the bounded snapshot limit")
         files.append({"path": path, "sha256": row["sha256"], "lines": row.get("lines", 0),
             "language":row["language"],"metric_family":family,"structural":row.get("structural",{}),
-            "functions": len(local), "decisions": sum(v - 1 for v in local),
+            "functions": sum(local.values()), "decisions": sum((v-1)*n for v,n in local.items()),
             "unattributed_decisions": outside_decisions,
-            "max_cyclomatic": max(local, default=0), "score": score_values(local) if family == "control_flow" else None,
-            "hotspots": sum(v >= 15 for v in local), "values": local})
+            "max_cyclomatic": max(local, default=0), "score": score_histogram(local) if family == "control_flow" else None,
+            "hotspots": sum(n for v,n in local.items() if v>=15), "histogram": {str(v):n for v,n in sorted(local.items())}})
     for family, factor in factors.items():
         local = factor.pop("values")
-        factor["score"] = score_values(local) if family == "control_flow" else None
+        factor["score"] = score_histogram(local) if family == "control_flow" else None
         factor["status"] = "scored" if family == "control_flow" else "diagnostic_only"
     score = factors.get("control_flow", {}).get("score")
     for language in language_counts.values():
         language["support"] = "measured" if language["analyzed_files"]==language["eligible_files"] else "partial" if language["analyzed_files"] else "unsupported"
+    files.sort(key=lambda row:row["path"])
+    errors.sort()
     eligible = len(seen)
     scored_files = sum(file["metric_family"] == "control_flow" for file in files)
     diagnostic_files = len(files) - scored_files
@@ -220,10 +256,10 @@ def measure_snapshot(snapshot):
             "unmeasured": [{"path":p,"language":inventory_by_path[p]["language"],"reason":error_reasons.get(p) or inventory_by_path[p].get("reason") or "Parser or dialect unavailable"} for p in unknown+errors],
             "excluded_fingerprint":hashlib.sha256(json.dumps(sorted((p,e["sha256"]) for p,e in inventory_by_path.items() if e["kind"] in {"excluded","generated","data"})).encode()).hexdigest()},
         "factors":factors,
-        "summary": {"functions": len(values), "decisions": sum(file["decisions"] for file in files if file["metric_family"] == "control_flow"),
-            "hotspots": sum(v >= 15 for v in values), "very_high": sum(v >= 40 for v in values),
+        "summary": {"functions": sum(values.values()), "decisions": sum(file["decisions"] for file in files if file["metric_family"] == "control_flow"),
+            "hotspots": sum(n for v,n in values.items() if v>=15), "very_high": sum(n for v,n in values.items() if v>=40),
             "max_cyclomatic": max(values, default=0)},
-        "files": files, "findings": sorted(findings, key=lambda f: (f["metric_family"] == "structure", -f["cyclomatic"], f["path"], f["line"])),
+        "files": files, "findings": sorted((item[1] for item in findings), key=lambda f: (f["metric_family"] == "structure", -f["cyclomatic"], f["path"], f["line"], f["id"])),
         "policy": POLICY}
 
 

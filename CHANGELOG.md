@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.5.0
+
+- Parse Python 3.12–3.14 syntax with pinned LibCST independently of the producer interpreter.
+- Conserve all scored units with exact histograms and losslessly compressed evidence; bound only investigation examples.
+- Validate 186 construct cases and complete all 20 pinned public corpus scans, including Skaffold's 111,693 programming units.
+- Version analysis as `complexity-burden-v4`; upgrades earn no Work reduction credit.
+
 ## 0.2.0
 
 - Added canonical multi-repository workspace scans.

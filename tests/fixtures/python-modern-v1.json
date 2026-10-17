@@ -1,0 +1,32 @@
+[
+  {
+    "id": "3.12-type-alias",
+    "source": "type Vector[T] = list[T]\ndef choose[T](x: T):\n return x if x else None\n",
+    "decisions": 1
+  },
+  {
+    "id": "3.12-fstring",
+    "source": "def choose(x):\n return f\"{x[\"key\"] if x else \"empty\"}\"\n",
+    "decisions": 1
+  },
+  {
+    "id": "3.13-default-type",
+    "source": "class Box[T = int]:\n def choose(self, x):\n  return x if x else 0\n",
+    "decisions": 1
+  },
+  {
+    "id": "3.14-template",
+    "source": "def choose(x):\n return t\"value {x if x else 0}\"\n",
+    "decisions": 1
+  },
+  {
+    "id": "3.14-except",
+    "source": "def choose(x):\n try:\n  return x()\n except ValueError, TypeError:\n  return 0\n",
+    "decisions": 1
+  },
+  {
+    "id": "except-star",
+    "source": "def choose(x):\n try:\n  x()\n except* ValueError:\n  pass\n",
+    "decisions": 1
+  }
+]
