@@ -6,7 +6,7 @@
 
 **Find complexity with evidence. Preserve architectural intent. Give coding agents bounded work.**
 
-Complexity Harness is a dependency-free Python CLI that combines exact
+Complexity Harness is a Python CLI with bundled, pinned syntax parsers that combines exact
 cyclomatic evidence, a canonical repository inventory, architectural memory,
 registered invariants, and approval-required refactor jobs.
 
@@ -25,7 +25,7 @@ keeps those signals separate and inspectable.
 
 ## What it does
 
-- Scans one Python repository with exact AST-based branch evidence.
+- Inventories any repository, with branch evidence for 26 language/dialect profiles plus C/C++ headers and content-detected scripts, and diagnostics for 20 declarative formats.
 - Scans a multi-repository workspace from a canonical inventory.
 - Excludes aliases, duplicate checkouts, generated packages, and build outputs.
 - Gives duplicate symbols deterministic, collision-free finding IDs.
@@ -38,7 +38,7 @@ keeps those signals separate and inspectable.
 ```mermaid
 flowchart LR
     Inventory["Canonical repository inventory"] --> Scan["Repository scans"]
-    Code["Python source"] --> Scan
+    Code["Customer repository source"] --> Scan
     Memory["Architectural memory"] --> Snapshot["Workspace snapshot"]
     Invariants["Registered invariants"] --> Snapshot
     Scan --> Snapshot
@@ -85,58 +85,56 @@ Configuration is optional at `.complexity/config.json`:
 }
 ```
 
-### Scan a canonical workspace
-
-`workspace-scan` automatically looks for `.complexity/repositories.json` and
-then `architecture/repositories.json`:
+### Measure a fixed burden index
 
 ```bash
-complexity-harness workspace-scan . --output /tmp/workspace-before.json
-complexity-harness validate /tmp/workspace-before.json
-complexity-harness report /tmp/workspace-before.json \
-  --top 20 \
-  --output /tmp/workspace-report.md
+complexity-harness burden /tmp/before.json
 ```
 
-A minimal inventory looks like this:
+`complexity-burden-v7` maps explicit control-flow decisions onto 0–100;
+higher is worse. A unit with 0 / 5 / 14 / 24 decisions has a fixed load of
+0 / 20.83 / 58.33 / 100. The repository combines 60% mean load with 40% mean
+highest-decile load; the highest repository sets the product score. These are
+investigation thresholds, not defect probabilities or an empirical measure of
+engineering time. Raw counts remain visible above the 24-decision saturation
+point. Nesting, domain necessity, coupling and semantic duplication need review.
 
-```json
-{
-  "schema_version": "software-repositories-v1",
-  "repositories": [
-    {
-      "id": "api",
-      "name": "Product API",
-      "path": "services/api",
-      "kind": "product",
-      "status": "canonical"
-    }
-  ],
-  "aliases": [
-    {
-      "path": "api-second-checkout",
-      "canonical_repository_id": "api"
-    }
-  ],
-  "excluded_paths": [
-    "**/.build/**",
-    "**/generated/**"
-  ]
-}
-```
+Declarative adapters retain nesting/fan-out diagnostics without a numeric score.
+The 20-repository calibration found ordinary document structure dominating 18
+of the first 19 v2 scores. Comparing those points with cyclomatic decisions was
+misleading; document-only repositories are now unmeasured on the main map.
+This version change establishes a baseline and earns no Work credit.
 
-Only entries with `status: canonical` are scanned. Repository paths are
-resolved inside the workspace root, duplicate IDs and canonical paths fail
-closed, and aliases are retained as inventory context without being scanned.
+See [benchmarks/README.md](benchmarks/README.md) for the pinned public corpus,
+274 construct and syntax oracles, independent comparison, results and limitations. Public
+repositories are customer stand-ins, not actual customer outcome validation.
 
-The workspace command also discovers:
+The scan inventories every Git-visible file, including `.mjs`, `.cc`, shell,
+Terraform, SQL, configuration and unknown customer extensions. Documentation,
+assets, recorded report/fixture data, generated/lock files and exclusions are counted separately. Explicit documentation elisions and intentionally invalid Docker build fixtures are separately attested, fingerprinted examples outside executable-source coverage. Ordinary broken source remains unmeasured. Unknown
+languages, unsupported dialects, parse errors, unsupported embedded template dialects,
+symlinks and oversized files remain unmeasured with content fingerprints.
+Customer source is never executed. The broker uses bundled parsers offline and
+returns measurements, never source bodies. Python uses pinned LibCST 1.9.0 to
+parse Python 3.12–3.14 syntax independently of the producer's interpreter; other
+adapters pin tree-sitter-language-pack 0.13.0 and tree-sitter 0.25.2. Build recipes, template conditions, GitHub Actions expressions, inline scripts and
+Plan 9/Go assembly retain source branch evidence through bounded static readers.
+C/C++ macros are measured once as source fragments, not expanded per invocation.
+Arbitrary custom DSLs, unsupported assembly dialects and unrecognized newer syntax
+remain unknown; inventorying any repository does not imply universal syntax support.
+Available
+grammars are not automatically advertised as validated complexity adapters.
 
-- `.complexity/architectural-memory.json` or
-  `architecture/architectural-memory.json`;
-- `.complexity/invariants.json` or `architecture/invariants.json`.
+Completed Work cannot lower the accepted score by itself. A comparable scan
+must remove load without increasing any factor, changing language coverage or
+changing unknown/generated/excluded source, unscored template/configuration data or recorded data. The product also requires approved
+source scope, merged delivery, passing CI, and durable behavior-test receipts on
+the exact measured revision. A parser/analysis upgrade creates a labeled new
+baseline, retains old receipts, and awards no reduction or Work credit.
 
-Explicit paths remain available through `--inventory`, `--memory`, and
-`--invariants`.
+See `tests/test_polyglot.py` for the adapter corpus and customer inventory cases.
+Bump both the measurement generation and analyzer identity when releasing a
+changed parser/runtime, adapter registry, classification or scoring policy.
 
 ## Read a finding in context
 
@@ -290,10 +288,22 @@ The core never imports an agent SDK or gives the executor broader authority.
 
 ## Current support and honest limits
 
-Python cyclomatic analysis is exact and AST-based. JavaScript and TypeScript
-repositories still appear in the canonical inventory and report, but their
-control-flow metrics are not analyzed yet. A TypeScript analyzer will be added
-only with a real parser, branch-evidence fixtures, and cross-runtime gold tests.
+Python analysis uses a bundled CST grammar. The validated adapter list is declared in
+`burden.py`, with independent corpus cases in `test_polyglot.py`. Unrecognized
+source stays in coverage as unknown. Coupling, semantic duplication and business
+necessity still require source investigation; this index does not certify them.
+
+Large scans retain exact histograms and every unit's immutable branch evidence;
+only investigation examples are capped at 1,000. Lossless compressed evidence
+supports a 12 MB wire / 256 MB expanded budget, up to 200,000 eligible source
+files and 250,000 inventory entries. Individual source files have a 8 MB parsing
+budget and a 100,000-unit ceiling. Capacity failures cannot publish partial
+baselines. Use `scan --compact` for per-file compressed output. The broker
+resumes bounded passes, reuses evidence only for unchanged Git blobs, and
+enumerates immutable subtrees when GitHub truncates its recursive response.
+The API pages and searches the source map in batches of 200. The pinned Skaffold
+corpus now measures 111,693 programming units with 94.35% scored-source coverage;
+its unknown files remain unmeasured. These limits are not an unlimited-size claim.
 
 The harness also deliberately does **not**:
 
@@ -325,3 +335,5 @@ which a human can select a small, testable, architecturally informed job.
 ## License
 
 MIT. Built by [Light Reach](https://lightreach.io).
+
+The v5 analysis generation adds pinned Babel 7.29.8 for JavaScript/JSX/Flow/TypeScript, Dart 0.1.0 for modern patterns, syntax-aware CSS, C/C++ header selection and common platform declaration handling, and CMake/Protobuf/INI/properties/OpenStep diagnostics. HTML inline scripts, event attributes and JavaScript URLs count in the programming index; embedded JSON/CSS remains diagnostic-only. Source is parsed as data without executing customer code or running project build tools. Parser/scope changes establish a new baseline and earn no Work credit. Private configuration and platform resources stay separately fingerprinted; changing them blocks reduction credit. Unknown formats, unrecognized macros/templates, malformed syntax and finite resource limits remain explicit coverage limits.

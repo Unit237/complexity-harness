@@ -1,0 +1,344 @@
+[
+  {
+    "language": "c",
+    "path": "test/test-tty.c",
+    "line": 419,
+    "symbol": "(tty_pty)",
+    "ours": 11,
+    "reference": 5,
+    "difference": 6,
+    "own_end_line": 468,
+    "reference_end_line": 468,
+    "nested_units": 0,
+    "url": "https://github.com/libuv/libuv/blob/8fb9cb919489a48880680a56efecff6a7dfb4504/test/test-tty.c#L419",
+    "repository": "libuv/libuv",
+    "folded_complexity": 11,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "preproc_if": 3,
+      "short-circuit": 6,
+      "if_statement": 1
+    },
+    "source_excerpt": [
+      "TEST_IMPL(tty_pty) {",
+      "/* TODO(gengjiawen): Fix test on QEMU. */",
+      "#if defined(__QEMU__)"
+    ]
+  },
+  {
+    "language": "cpp",
+    "path": "test/scan-test.cc",
+    "line": 153,
+    "symbol": "TEST",
+    "ours": 1,
+    "reference": 4,
+    "difference": -3,
+    "own_end_line": 183,
+    "reference_end_line": 183,
+    "nested_units": 2,
+    "url": "https://github.com/fmtlib/fmt/blob/9cf9f38eded63e5e0fb95cd536ba51be601d7fa2/test/scan-test.cc#L153",
+    "repository": "fmtlib/fmt",
+    "folded_complexity": 4,
+    "fully_explained_by_nested_ownership": true,
+    "branch_kinds": {},
+    "source_excerpt": [
+      "TEST(scan_test, lock) {",
+      "  auto pipe = fmt::pipe();",
+      ""
+    ]
+  },
+  {
+    "language": "csharp",
+    "path": "Dapper/SqlMapper.Async.cs",
+    "line": 1290,
+    "symbol": "QueryUnbufferedAsync",
+    "ours": 1,
+    "reference": 18,
+    "difference": -17,
+    "own_end_line": 1349,
+    "reference_end_line": 1349,
+    "nested_units": 1,
+    "url": "https://github.com/DapperLib/Dapper/blob/bd4f75b512de3e00f2c2631d5309961a1ecfea23/Dapper/SqlMapper.Async.cs#L1290",
+    "repository": "DapperLib/Dapper",
+    "folded_complexity": 16,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {},
+    "source_excerpt": [
+      "        private static IAsyncEnumerable<T> QueryUnbufferedAsync<T>(this IDbConnection cnn, Type effectiveType, CommandDefinition command)",
+      "        {",
+      "            return Impl(cnn, effectiveType, command, command.CancellationToken); // proxy to allow CT expression"
+    ]
+  },
+  {
+    "language": "go",
+    "path": "vendor/github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.validate.go",
+    "line": 54,
+    "symbol": "validate",
+    "ours": 272,
+    "reference": 14,
+    "difference": 258,
+    "own_end_line": 1259,
+    "reference_end_line": 115,
+    "nested_units": 0,
+    "url": "https://github.com/GoogleContainerTools/skaffold/blob/f132ab25adf1599c7fbdce733144991126565386/vendor/github.com/envoyproxy/go-control-plane/envoy/extensions/filters/network/http_connection_manager/v3/http_connection_manager.pb.validate.go#L54",
+    "repository": "GoogleContainerTools/skaffold",
+    "folded_complexity": 272,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "if_statement": 197,
+      "for_statement": 5,
+      "type_case": 68,
+      "short-circuit": 1
+    },
+    "source_excerpt": [
+      "func (m *HttpConnectionManager) validate(all bool) error {",
+      "\tif m == nil {",
+      "\t\treturn nil"
+    ]
+  },
+  {
+    "language": "javascript",
+    "path": "scripts/release.js",
+    "line": 145,
+    "symbol": "main",
+    "ours": 30,
+    "reference": 3,
+    "difference": 27,
+    "own_end_line": 342,
+    "reference_end_line": 163,
+    "nested_units": 1,
+    "url": "https://github.com/vuejs/core/blob/6eb29d345aa73746207f80c89ee8b37ff7b949c9/scripts/release.js#L145",
+    "repository": "vuejs/core",
+    "folded_complexity": 30,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "if_statement": 21,
+      "short-circuit": 3,
+      "ternary_expression": 3,
+      "catch_clause": 1,
+      "optional_chain": 1
+    },
+    "source_excerpt": [
+      "async function main() {",
+      "  if (!(await isInSyncWithRemote())) {",
+      "    return"
+    ]
+  },
+  {
+    "language": "kotlin",
+    "path": "core/commonMain/src/kotlinx/serialization/internal/PluginGeneratedSerialDescriptor.kt",
+    "line": 100,
+    "symbol": "<lambda_literal>",
+    "ours": 1,
+    "reference": 9,
+    "difference": -8,
+    "own_end_line": 102,
+    "reference_end_line": 121,
+    "nested_units": 0,
+    "url": "https://github.com/Kotlin/kotlinx.serialization/blob/f9f160a680da9f92c3bb121ae3644c96e57ba42e/core/commonMain/src/kotlinx/serialization/internal/PluginGeneratedSerialDescriptor.kt#L100",
+    "repository": "Kotlin/kotlinx.serialization",
+    "folded_complexity": 1,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {},
+    "source_excerpt": [
+      "        return (0 until elementsCount).joinToString(\", \", \"$serialName(\", \")\") { i ->",
+      "            getElementName(i) + \": \" + getElementDescriptor(i).serialName",
+      "        }"
+    ]
+  },
+  {
+    "language": "lua",
+    "path": "busted/runner.lua",
+    "line": 157,
+    "symbol": "<function_definition>",
+    "ours": 6,
+    "reference": 11,
+    "difference": -5,
+    "own_end_line": 168,
+    "reference_end_line": 221,
+    "nested_units": 0,
+    "url": "https://github.com/lunarmodules/busted/blob/02f31a9c103a44e166617cfdb6ba1b8994a9c912/busted/runner.lua#L157",
+    "repository": "lunarmodules/busted",
+    "folded_complexity": 6,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "while_statement": 1,
+      "short-circuit": 4
+    },
+    "source_excerpt": [
+      "  local getFullName = function(name)",
+      "    local parent = busted.context.get()",
+      "    local names = { name }"
+    ]
+  },
+  {
+    "language": "php",
+    "path": "Slim/MiddlewareDispatcher.php",
+    "line": 144,
+    "symbol": "addDeferred",
+    "ours": 1,
+    "reference": 22,
+    "difference": -21,
+    "own_end_line": 242,
+    "reference_end_line": 242,
+    "nested_units": 2,
+    "url": "https://github.com/slimphp/Slim/blob/5943393b88716eb9e82c4161caa956af63423913/Slim/MiddlewareDispatcher.php#L144",
+    "repository": "slimphp/Slim",
+    "folded_complexity": 19,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {},
+    "source_excerpt": [
+      "    public function addDeferred(string $middleware): self",
+      "    {",
+      "        $next = $this->tip;"
+    ]
+  },
+  {
+    "language": "python",
+    "path": "src/requests/utils.py",
+    "line": 744,
+    "symbol": "set_environ",
+    "ours": 4,
+    "reference": 5,
+    "difference": -1,
+    "own_end_line": 762,
+    "reference_end_line": 762,
+    "nested_units": 0,
+    "url": "https://github.com/psf/requests/blob/0e322af87745eff34caffe4df68456ebc20d9068/src/requests/utils.py#L744",
+    "repository": "psf/requests",
+    "folded_complexity": 4,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "if": 3
+    },
+    "source_excerpt": [
+      "def set_environ(env_name, value):",
+      "    \"\"\"Set the environment variable 'env_name' to 'value'",
+      ""
+    ]
+  },
+  {
+    "language": "ruby",
+    "path": "lib/sinatra/base.rb",
+    "line": 1100,
+    "symbol": "process_route",
+    "ours": 15,
+    "reference": 33,
+    "difference": -18,
+    "own_end_line": 1131,
+    "reference_end_line": 2072,
+    "nested_units": 6,
+    "url": "https://github.com/sinatra/sinatra/blob/7b50a1bbb5324838908dfaa00ec53ad322673a29/lib/sinatra/base.rb#L1100",
+    "repository": "sinatra/sinatra",
+    "folded_complexity": 19,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "if_modifier": 3,
+      "short-circuit": 6,
+      "unless_modifier": 3,
+      "if": 1,
+      "rescue": 1
+    },
+    "source_excerpt": [
+      "    def process_route(pattern, conditions, block = nil, values = [])",
+      "      route = @request.path_info",
+      "      route = '/' if route.empty? && !settings.empty_path_info?"
+    ]
+  },
+  {
+    "language": "rust",
+    "path": "axum/benches/benches.rs",
+    "line": 15,
+    "symbol": "main",
+    "ours": 2,
+    "reference": 19,
+    "difference": -17,
+    "own_end_line": 90,
+    "reference_end_line": 90,
+    "nested_units": 17,
+    "url": "https://github.com/tokio-rs/axum/blob/c59208c86fded335cd85e388030ad59347b0e5ae/axum/benches/benches.rs#L15",
+    "repository": "tokio-rs/axum",
+    "folded_complexity": 5,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "if_expression": 1
+    },
+    "source_excerpt": [
+      "fn main() {",
+      "    if on_ci() {",
+      "        install_rewrk();"
+    ]
+  },
+  {
+    "language": "swift",
+    "path": "Sources/HTTPTypes/HTTPField.swift",
+    "line": 158,
+    "symbol": "legalizeValue",
+    "ours": 2,
+    "reference": 6,
+    "difference": -4,
+    "own_end_line": 177,
+    "reference_end_line": 177,
+    "nested_units": 3,
+    "url": "https://github.com/apple/swift-http-types/blob/ef18d829e8b92d731ad27bb81583edd2094d1ce3/Sources/HTTPTypes/HTTPField.swift#L158",
+    "repository": "apple/swift-http-types",
+    "folded_complexity": 6,
+    "fully_explained_by_nested_ownership": true,
+    "branch_kinds": {
+      "if_statement": 1
+    },
+    "source_excerpt": [
+      "    static func legalizeValue(_ value: ISOLatin1String) -> ISOLatin1String {",
+      "        if self._isValidValue(value._storage.utf8) {",
+      "            return value"
+    ]
+  },
+  {
+    "language": "tsx",
+    "path": "packages-private/dts-test/componentInstance.test-d.tsx",
+    "line": 27,
+    "symbol": "<arrow_function>",
+    "ours": 1,
+    "reference": 3,
+    "difference": -2,
+    "own_end_line": 40,
+    "reference_end_line": 40,
+    "nested_units": 0,
+    "url": "https://github.com/vuejs/core/blob/6eb29d345aa73746207f80c89ee8b37ff7b949c9/packages-private/dts-test/componentInstance.test-d.tsx#L27",
+    "repository": "vuejs/core",
+    "folded_complexity": 1,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {},
+    "source_excerpt": [
+      "describe('functional component', () => {",
+      "  // Functional",
+      "  const CompFunctional: FunctionalComponent<{ test?: string }> = {} as any"
+    ]
+  },
+  {
+    "language": "typescript",
+    "path": "packages/compiler-sfc/src/script/resolveType.ts",
+    "line": 143,
+    "symbol": "resolveTypeElements",
+    "ours": 6,
+    "reference": 53,
+    "difference": -47,
+    "own_end_line": 160,
+    "reference_end_line": 360,
+    "nested_units": 0,
+    "url": "https://github.com/vuejs/core/blob/6eb29d345aa73746207f80c89ee8b37ff7b949c9/packages/compiler-sfc/src/script/resolveType.ts#L143",
+    "repository": "vuejs/core",
+    "folded_complexity": 6,
+    "fully_explained_by_nested_ownership": false,
+    "branch_kinds": {
+      "if_statement": 1,
+      "short-circuit": 3,
+      "ternary_expression": 1
+    },
+    "source_excerpt": [
+      "export function resolveTypeElements(",
+      "  ctx: TypeResolveContext,",
+      "  node: Node & MaybeWithScope & { _resolvedElements?: ResolvedElements },"
+    ]
+  }
+]

@@ -1,0 +1,41 @@
+{
+  "version": "complexity-burden-v1",
+  "analyzer": "python-ast-cyclomatic-v2",
+  "decision_ceiling": 24,
+  "mean_weight": 0.6,
+  "tail_weight": 0.4,
+  "tail_fraction": 0.1,
+  "target": 35,
+  "bands": [
+    {
+      "minimum": 0,
+      "label": "Low"
+    },
+    {
+      "minimum": 20,
+      "label": "Moderate"
+    },
+    {
+      "minimum": 40,
+      "label": "Elevated"
+    },
+    {
+      "minimum": 60,
+      "label": "High"
+    },
+    {
+      "minimum": 80,
+      "label": "Very high"
+    }
+  ],
+  "formula": "100 × (0.6 × mean function load + 0.4 × mean highest-decile load); function load = min((cyclomatic − 1) / 24, 1)",
+  "meaning": "Measured Python control-flow burden; not a product readiness percentage.",
+  "reduction_requires": [
+    "comparable_complete_scan",
+    "fewer_decisions",
+    "exact_revision_behavior_checks",
+    "merged_source"
+  ],
+  "product_aggregation": "Highest measured repository burden; adding lower-burden code in another repository cannot dilute the product score.",
+  "reduction_audit": "Counts all recognized Python branch decisions, including lambdas and module-level control flow, so moving decisions outside named functions cannot earn credit."
+}

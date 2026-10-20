@@ -29,6 +29,13 @@ class FileMetric:
     lines: int
     functions: tuple[FunctionMetric, ...] = ()
     parse_error: str | None = None
+    unattributed_branches: tuple[BranchEvidence, ...] = ()
+
+    metric_family: str = "control_flow"
+    structural: dict[str, Any] = field(default_factory=dict)
+    structure_branches: tuple[BranchEvidence, ...] = ()
+    unsupported: bool = False
+    example_evidence: dict[str, Any] | None = None
 
     @property
     def max_cyclomatic(self) -> int:
@@ -54,18 +61,21 @@ class Snapshot:
     findings: list[Finding]
     architectural_memory: list[dict[str, Any]] = field(default_factory=list)
     schema_version: str = "complexity-snapshot-v1"
+    coverage: dict[str, Any] = field(default_factory=dict)
 
-    def as_dict(self) -> dict[str, Any]:
+    def as_dict(self, *, compact=False) -> dict[str, Any]:
+        from .complexity_evidence import pack_file
         return {
             "schema_version": self.schema_version,
             "repository": self.repository,
+            "coverage": self.coverage,
             "summary": {
                 "files": len(self.files),
                 "functions": sum(len(row.functions) for row in self.files),
                 "findings": len(self.findings),
                 "architectural_memory_entries": len(self.architectural_memory),
             },
-            "files": [asdict(row) | {"max_cyclomatic": row.max_cyclomatic} for row in self.files],
+            "files": [pack_file(asdict(row)) if compact else asdict(row) | {"max_cyclomatic": row.max_cyclomatic} for row in self.files],
             "findings": [asdict(row) for row in self.findings],
             "architectural_memory": self.architectural_memory,
         }

@@ -1,0 +1,3 @@
+recursive-include benchmarks *.json *.py *.md
+recursive-include contracts *.json
+recursive-include tests/fixtures *.json

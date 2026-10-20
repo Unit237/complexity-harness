@@ -1,130 +1,92 @@
+"""Runtime-independent Python syntax; repository code is parsed, never imported."""
 from __future__ import annotations
 
-import ast
 from collections import Counter
 import hashlib
+from importlib.metadata import version, PackageNotFoundError
 from pathlib import Path
 
 from .models import BranchEvidence, FileMetric, FunctionMetric
 
 
-class _BranchVisitor(ast.NodeVisitor):
-    def __init__(self) -> None:
-        self.branches: list[BranchEvidence] = []
-        self._fallback_line = 0
-
-    def _add(self, node: ast.AST, kind: str, contribution: int = 1) -> None:
-        if contribution > 0:
-            line = int(getattr(node, "lineno", 0) or self._fallback_line)
-            self.branches.append(BranchEvidence(kind, line, contribution))
-
-    def visit_If(self, node: ast.If) -> None:
-        self._add(node, "if")
-        self.generic_visit(node)
-
-    def visit_IfExp(self, node: ast.IfExp) -> None:
-        self._add(node, "conditional-expression")
-        self.generic_visit(node)
-
-    def visit_For(self, node: ast.For) -> None:
-        self._add(node, "for")
-        self.generic_visit(node)
-
-    visit_AsyncFor = visit_For
-
-    def visit_While(self, node: ast.While) -> None:
-        self._add(node, "while")
-        self.generic_visit(node)
-
-    def visit_ExceptHandler(self, node: ast.ExceptHandler) -> None:
-        self._add(node, "except")
-        self.generic_visit(node)
-
-    def visit_BoolOp(self, node: ast.BoolOp) -> None:
-        self._add(node, "boolean-chain", len(node.values) - 1)
-        self.generic_visit(node)
-
-    def visit_Match(self, node: ast.Match) -> None:
-        self._add(node, "match-case", len(node.cases))
-        self.generic_visit(node)
-
-    def visit_comprehension(self, node: ast.comprehension) -> None:
-        self._add(node, "comprehension-loop")
-        for condition in node.ifs:
-            self._add(condition, "comprehension-filter")
-        self.generic_visit(node)
-
-    def _visit_comprehension_expression(self, node: ast.AST) -> None:
-        previous = self._fallback_line
-        self._fallback_line = int(getattr(node, "lineno", 0) or previous)
-        self.generic_visit(node)
-        self._fallback_line = previous
-
-    visit_ListComp = _visit_comprehension_expression
-    visit_SetComp = _visit_comprehension_expression
-    visit_DictComp = _visit_comprehension_expression
-    visit_GeneratorExp = _visit_comprehension_expression
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        return
-
-    visit_AsyncFunctionDef = visit_FunctionDef
-    visit_Lambda = visit_FunctionDef
-
-
-class _FunctionCollector(ast.NodeVisitor):
-    def __init__(self) -> None:
-        self.scope: list[str] = []
-        self.metrics: list[FunctionMetric] = []
-        self.occurrences: Counter[str] = Counter()
-
-    def visit_ClassDef(self, node: ast.ClassDef) -> None:
-        self.scope.append(node.name)
-        self.generic_visit(node)
-        self.scope.pop()
-
-    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
-        symbol = ".".join([*self.scope, node.name])
-        self.occurrences[symbol] += 1
-        visitor = _BranchVisitor()
-        for statement in node.body:
-            visitor.visit(statement)
-        self.metrics.append(FunctionMetric(
-            symbol=symbol,
-            occurrence=self.occurrences[symbol],
-            line=node.lineno,
-            end_line=int(getattr(node, "end_lineno", node.lineno)),
-            cyclomatic=1 + sum(row.contribution for row in visitor.branches),
-            branches=tuple(visitor.branches),
-        ))
-        self.scope.append(node.name)
-        for statement in node.body:
-            self.visit(statement)
-        self.scope.pop()
-
-    visit_AsyncFunctionDef = visit_FunctionDef
-
-
 def analyze_python(path: Path, *, relative_path: str) -> FileMetric:
-    data = path.read_bytes()
+    return analyze_python_bytes(path.read_bytes(), relative_path=relative_path)
+
+
+def analyze_python_bytes(data: bytes, *, relative_path: str) -> FileMetric:
     source = data.decode("utf-8")
-    lines = len(source.splitlines())
+    base = dict(path=relative_path, language="python", sha256=hashlib.sha256(data).hexdigest(),
+                lines=len(source.splitlines()))
     try:
-        tree = ast.parse(source, filename=relative_path)
-    except SyntaxError as exc:
-        return FileMetric(
-            path=relative_path,
-            language="python",
-            sha256=hashlib.sha256(data).hexdigest(),
-            lines=lines,
-            parse_error=f"{exc.msg} at line {exc.lineno}",
-        )
-    collector = _FunctionCollector()
-    collector.visit(tree)
-    return FileMetric(
-        path=relative_path,
-        language="python",
-        sha256=hashlib.sha256(data).hexdigest(),
-        lines=lines,
-        functions=tuple(sorted(collector.metrics, key=lambda row: (row.line, row.symbol))),
-    )
+        import libcst as cst
+        from libcst.metadata import MetadataWrapper, PositionProvider
+        if version("libcst") != "1.9.0":
+            raise ValueError("Python parser version differs from the analysis contract")
+    except (ImportError, PackageNotFoundError, ValueError) as exc:
+        return FileMetric(**base, parse_error=f"Python parser unavailable: {type(exc).__name__}")
+
+    class Decisions(cst.CSTVisitor):
+        METADATA_DEPENDENCIES = (PositionProvider,)
+
+        def __init__(self):
+            self.scope, self.owners, self.units, self.outside = [], [None], [], []
+            self.occurrences = Counter()
+
+        def add(self, node, kind):
+            evidence = BranchEvidence(kind, self.get_metadata(PositionProvider, node).start.line)
+            (self.owners[-1]["branches"] if self.owners[-1] is not None else self.outside).append(evidence)
+
+        def visit_ClassDef(self, node):
+            self.scope.append(node.name.value)
+
+        def leave_ClassDef(self, node):
+            self.scope.pop()
+
+        def visit_FunctionDef(self, node):
+            symbol = ".".join([*self.scope, node.name.value])
+            self.scope.append(node.name.value)
+            self.occurrences[symbol] += 1
+            position = self.get_metadata(PositionProvider, node)
+            self.units.append({"symbol":symbol,"occurrence":self.occurrences[symbol],
+                "line":position.start.line,"end_line":position.end.line,"branches":[]})
+            # Defaults, annotations and decorators belong to the source audit,
+            # not to the function body; lambdas retain the same audit convention.
+            self.owners.append(None)
+
+        def visit_FunctionDef_body(self, node):
+            self.owners[-1] = self.units[-1]
+
+        def leave_FunctionDef_body(self, node):
+            self.owners[-1] = None
+
+        def leave_FunctionDef(self, node):
+            self.owners.pop(); self.scope.pop()
+
+        def visit_Lambda(self, node):
+            self.owners.append(None)
+
+        def leave_Lambda(self, node):
+            self.owners.pop()
+
+        def visit_If(self, node): self.add(node,"if")
+        def visit_IfExp(self, node): self.add(node,"conditional-expression")
+        def visit_For(self, node): self.add(node,"for")
+        def visit_While(self, node): self.add(node,"while")
+        def visit_ExceptHandler(self, node): self.add(node,"except")
+        def visit_ExceptStarHandler(self, node): self.add(node,"except")
+        def visit_BooleanOperation(self, node): self.add(node,"boolean-chain")
+        def visit_CompFor(self, node): self.add(node,"comprehension-loop")
+        def visit_CompIf(self, node): self.add(node,"comprehension-filter")
+
+        def visit_MatchCase(self, node):
+            self.add(node,"match-case")
+            if node.guard is not None: self.add(node.guard,"match-guard")
+
+    try:
+        visitor = Decisions()
+        MetadataWrapper(cst.parse_module(source), unsafe_skip_copy=True).visit(visitor)
+    except (cst.ParserSyntaxError, RecursionError) as exc:
+        return FileMetric(**base, parse_error=f"Python syntax not recognized: {type(exc).__name__}")
+    metrics = tuple(FunctionMetric(unit["symbol"],unit["occurrence"],unit["line"],unit["end_line"],
+        1+sum(b.contribution for b in unit["branches"]),tuple(unit["branches"])) for unit in visitor.units)
+    return FileMetric(**base, functions=metrics, unattributed_branches=tuple(visitor.outside))

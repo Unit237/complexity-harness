@@ -1,0 +1,8 @@
+[
+  {"values": [], "score": null, "level": "Unmeasured"},
+  {"values": [1], "score": 0, "level": "Low"},
+  {"values": [13], "score": 50, "level": "Elevated"},
+  {"values": [25], "score": 100, "level": "Very high"},
+  {"values": [1, 25], "score": 70, "level": "High"},
+  {"values": [1,1,1,1,1,1,1,1,1,25], "score": 46, "level": "Elevated"}
+]

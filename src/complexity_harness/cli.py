@@ -14,6 +14,7 @@ from .report import markdown_report
 from .scanner import scan_repository
 from .snapshot import read_snapshot, validate_snapshot, write_json
 from .workspace import scan_workspace
+from .burden import measure_snapshot
 
 
 def _print(payload: object) -> None:
@@ -24,7 +25,7 @@ def _scan_command(args: argparse.Namespace) -> int:
     payload = scan_repository(
         args.path,
         architectural_memory_path=args.memory,
-    ).as_dict()
+    ).as_dict(compact=args.compact)
     if args.output:
         write_json(args.output, payload)
     else:
@@ -55,6 +56,11 @@ def _validate_command(args: argparse.Namespace) -> int:
 def _health_command(args: argparse.Namespace) -> int:
     payload = read_snapshot(args.snapshot)
     _print({"summary": payload["summary"], "findings": payload["findings"]})
+    return 0
+
+
+def _burden_command(args: argparse.Namespace) -> int:
+    _print(measure_snapshot(read_snapshot(args.snapshot)))
     return 0
 
 
@@ -119,6 +125,7 @@ COMMANDS = {
     "workspace-scan": _workspace_scan_command,
     "validate": _validate_command,
     "health": _health_command,
+    "burden": _burden_command,
     "diff": _diff_command,
     "impact": _context_command,
     "context": _context_command,
@@ -143,6 +150,7 @@ def main(argv: list[str] | None = None) -> int:
     scan.add_argument("path", nargs="?", default=".")
     scan.add_argument("--output")
     scan.add_argument("--memory")
+    scan.add_argument("--compact", action="store_true", help="Compress per-file branch evidence losslessly for large source inventories")
 
     workspace_scan = sub.add_parser("workspace-scan")
     workspace_scan.add_argument("path", nargs="?", default=".")
@@ -156,6 +164,9 @@ def main(argv: list[str] | None = None) -> int:
 
     health = sub.add_parser("health")
     health.add_argument("snapshot")
+
+    burden = sub.add_parser("burden")
+    burden.add_argument("snapshot")
 
     delta = sub.add_parser("diff")
     delta.add_argument("before")

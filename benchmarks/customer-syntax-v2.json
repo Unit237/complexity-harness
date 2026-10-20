@@ -1,0 +1,434 @@
+[
+  {
+    "path": "app.groovy",
+    "language": "groovy",
+    "source": "def f(x) { if (x && ok) return a?.b ?: 0; return 0 }",
+    "decisions": 4
+  },
+  {
+    "path": "app.groovy",
+    "language": "groovy",
+    "source": "def f(xs) { xs.collect { x -> x ? 1 : 0 }; if(xs) return 1 }",
+    "decisions": 2
+  },
+  {
+    "path": "app.groovy",
+    "language": "groovy",
+    "source": "@Controller(\"/hello\")\nclass A { @Get(produces=MediaType.TEXT_PLAIN) String f(x) { if(x) return \"yes\"; return \"no\" } }",
+    "decisions": 1
+  },
+  {
+    "path": "app.nix",
+    "language": "nix",
+    "source": "x: if x && y then 1 else 0",
+    "decisions": 2
+  },
+  {
+    "path": "app.nix",
+    "language": "nix",
+    "source": "x: x -> y || z",
+    "decisions": 2
+  },
+  {
+    "path": "app.bzl",
+    "language": "starlark",
+    "source": "def f(xs):\n return [x for x in xs if x]\n",
+    "decisions": 2
+  },
+  {
+    "path": "app.bzl",
+    "language": "starlark",
+    "source": "def f(x):\n return 1 if x and y else 0\n",
+    "decisions": 2
+  },
+  {
+    "path": "app.s",
+    "language": "assembly",
+    "source": "TEXT \u00b7f(SB), $0-0\n JE done\n JMP done\n done: RET\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.s",
+    "language": "assembly",
+    "source": "#include \"textflag.h\"\n#define choose(x) \\\n CMPQ x, $0; JE done\nTEXT \u00b7f(SB), $0-0\n choose(AX)\n RET\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.s",
+    "language": "assembly",
+    "source": "TEXT \u00b7f(SB), $0-0\n CSEL LT, R1, R2, R3\n CBNZ R3, done\n TBZ $1, R3, done\n done: RET\n",
+    "decisions": 3
+  },
+  {
+    "path": "app.cmd",
+    "language": "batch",
+    "source": "@echo \"if && for\"\nif exist \"file\" echo yes\necho done || exit /b 1\n",
+    "decisions": 2
+  },
+  {
+    "path": "app.nsi",
+    "language": "nsis",
+    "source": "Section Main\n !ifdef X\n IfErrors failed\n StrCmp $0 \"if\" done\n !endif\nSectionEnd\n",
+    "decisions": 3
+  },
+  {
+    "path": "app.tpl",
+    "language": "gotemplate",
+    "source": "{{ if and .A (or .B .C) }}yes{{ else if .D }}no{{ end }}",
+    "decisions": 4
+  },
+  {
+    "path": "app.tpl",
+    "language": "gotemplate",
+    "source": "{{ define \"body\" }}{{ range .Items }}{{ with .Name }}{{ . }}{{ end }}{{ end }}{{ end }}",
+    "decisions": 2
+  },
+  {
+    "path": "app.tpl",
+    "language": "gotemplate",
+    "source": "{{ .A | or .B }}",
+    "decisions": 1
+  },
+  {
+    "path": "app.tpl",
+    "language": "gotemplate",
+    "source": "{{/* if and or range */}}{{ \"if and or\" }}",
+    "decisions": 0
+  },
+  {
+    "path": "Procfile",
+    "language": "procfile",
+    "source": "web: if test x; then echo yes; fi\nworker: test x && echo yes\n",
+    "decisions": 2
+  },
+  {
+    "path": "justfile",
+    "language": "just",
+    "source": "test:\n    if test x; then echo yes; fi\n",
+    "decisions": 1
+  },
+  {
+    "path": "run",
+    "language": "unknown",
+    "source": "#!/usr/bin/env python3\nif x and y:\n print(\"if while\")\n",
+    "decisions": 2
+  },
+  {
+    "path": "run",
+    "language": "unknown",
+    "source": "#!/bin/sh\nif test x; then echo yes; fi\n",
+    "decisions": 1
+  },
+  {
+    "path": "Dockerfile",
+    "language": "dockerfile",
+    "source": "FROM alpine\nRUN [ \"$X\" = yes ] || false\nCMD while true; do echo ready; done",
+    "decisions": 2
+  },
+  {
+    "path": "Dockerfile",
+    "language": "dockerfile",
+    "source": "FROM alpine\nRUN --mount=type=cache,target=/tmp,sharing=locked echo hi \\\n && test x\nCOPY --link a /app\n",
+    "decisions": 1
+  },
+  {
+    "path": "Dockerfile",
+    "language": "dockerfile",
+    "source": "FROM alpine\nRUN [\"sh\",\"-c\",\"if test x; then echo yes; fi\"]\n",
+    "decisions": 1
+  },
+  {
+    "path": "Dockerfile",
+    "language": "dockerfile",
+    "source": "FROM alpine\nRUN <<EOF\nif test x; then echo yes; fi\nEOF\n",
+    "decisions": 1
+  },
+  {
+    "path": "Makefile",
+    "language": "make",
+    "source": "ifeq ($(OS),Windows_NT)\nV=x\nelse ifeq ($(OS),Darwin)\nV=y\nendif\nall:\n\tif test x; then echo yes; fi\n",
+    "decisions": 3
+  },
+  {
+    "path": "Makefile",
+    "language": "make",
+    "source": "X := $(if $(READY),yes,no)\nY := $(or a,b,c)\nall:\n\t@test x || false\n",
+    "decisions": 4
+  },
+  {
+    "path": "Makefile",
+    "language": "make",
+    "source": "all:\n\techo \"if && or\" \\\n\t && echo yes\n",
+    "decisions": 1
+  },
+  {
+    "path": "Makefile",
+    "language": "make",
+    "source": "define check =\nall:\n\tif test x; then echo yes; fi\nendef\n$(eval $(call check,tool))\n",
+    "decisions": 1
+  },
+  {
+    "path": "Makefile",
+    "language": "make",
+    "source": "all:\n\t$(eval LOG := $(shell mktemp))\n\t@test -s \"$(LOG)\" || (echo no && false)\n",
+    "decisions": 2
+  },
+  {
+    "path": "modern.kt",
+    "language": "kotlin",
+    "source": "fun f(x: Int?): Int { val dynamic = x ?: 0; return if(dynamic > 0) 1 else 0 }",
+    "decisions": 2
+  },
+  {
+    "path": "modern.kt",
+    "language": "kotlin",
+    "source": "fun f(x: Boolean): Int { /* \u0000 if false */ return if (x) 1 else 0 }",
+    "decisions": 1
+  },
+  {
+    "path": "modern.swift",
+    "language": "swift",
+    "source": "func f(_ a: Bool) -> Int { let lock = LockStorage.create(value: ()); if a {return 1};return 0 }",
+    "decisions": 1
+  },
+  {
+    "path": "app.vue",
+    "language": "vue",
+    "source": "<template><div v-if=\"ok\">{{ a && b ? c : d }}</div></template><script setup lang=\"ts\">const f = x => x?.a ?? 0</script>",
+    "decisions": 5
+  },
+  {
+    "path": "page.html",
+    "language": "html",
+    "source": "<script>function f(x) { if(x){{ if(x && y) return 1; }} return 0; }</script>",
+    "decisions": 3
+  },
+  {
+    "path": "page.html",
+    "language": "html",
+    "source": "<footer>Done</footer><script>if(x) go()</script>",
+    "decisions": 1
+  },
+  {
+    "path": "page.html",
+    "language": "html",
+    "source": "<script type=\"text/x-template\"><div v-if=\"x\">{{a ? b : c}}</div></script>",
+    "decisions": 2
+  },
+  {
+    "path": "layouts/blocks/panel.html",
+    "language": "html",
+    "source": "{{ if .Show }}<button onclick=\"if (x) go()\">Go</button>{{ end }}",
+    "decisions": 2
+  },
+  {
+    "path": "foo.go.tmpl",
+    "language": "gotemplate",
+    "source": "package app\nfunc f(x bool) int { if x {return 1}; return {{ .Value }} }\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.cmd",
+    "language": "batch",
+    "source": "if exist x if \"a\"==\"b\" echo yes\n",
+    "decisions": 2
+  },
+  {
+    "path": "app.cmd",
+    "language": "batch",
+    "source": "for /f %%i in ('if exist a echo b') do if %%i==b echo hi\n",
+    "decisions": 3
+  },
+  {
+    "path": "app.cs",
+    "language": "csharp",
+    "source": "class A { void F() { int x = 41\n#if A && B\n + 4\n#endif\n ; if (x > 0) go(); } }",
+    "decisions": 3
+  },
+  {
+    "path": "page.html",
+    "language": "html",
+    "source": "<script>function f(x) {\u2028if(x) go();\u2028}</script>",
+    "decisions": 1
+  },
+  {
+    "path": "app.vue",
+    "language": "vue",
+    "source": "<template><p>{{ x&lt;y ? a : b }}</p><!--\n note\n--><p>{{ x &amp;&amp; y }}</p></template>",
+    "decisions": 2
+  },
+  {
+    "path": "app.vue",
+    "language": "vue",
+    "source": "<template><p>{{ xs.map(x => x ? 1 : 0) }}</p></template>",
+    "decisions": 1
+  },
+  {
+    "path": "app.ps1",
+    "language": "powershell",
+    "source": "function F($x) { if($x -and $y -or $z) { return 1 } elseif($a) { return 2 } }",
+    "decisions": 4
+  },
+  {
+    "path": "app.ps1",
+    "language": "powershell",
+    "source": "function F { foreach($x in $xs) { try { while($x){} } catch { return 0 } } }",
+    "decisions": 3
+  },
+  {
+    "path": "app.ps1",
+    "language": "powershell",
+    "source": "& { if($x) {go} }; echo x && echo y || echo z",
+    "decisions": 3
+  },
+  {
+    "path": ".github/workflows/check.yml",
+    "language": "yaml",
+    "source": "name: Check\non: push\njobs:\n  test:\n    runs-on: ubuntu-latest\n    if: github.ref == 'main' && !cancelled()\n    steps:\n      - run: |\n          if test x; then\n            echo \"${{ inputs.ok && 'yes' || 'no' }}\"\n          fi\n",
+    "decisions": 5
+  },
+  {
+    "path": ".github/workflows/check.yml",
+    "language": "yaml",
+    "source": "jobs:\n  check:\n    runs-on: windows-latest\n    steps:\n      - run: if ($x -and $y) { Write-Host yes }\n",
+    "decisions": 2
+  },
+  {
+    "path": ".github/workflows/check.yml",
+    "language": "yaml",
+    "source": "env:\n  RESULT: ${{ case(inputs.a, 'A', inputs.b, 'B', 'C') }}\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo done\n",
+    "decisions": 2
+  },
+  {
+    "path": ".github/workflows/check.yml",
+    "language": "yaml",
+    "source": "jobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - run: >\n          test x &&\n          echo yes\n",
+    "decisions": 1
+  },
+  {
+    "path": ".github/workflows/check.yml",
+    "language": "yaml",
+    "source": "env:\n  VALUE: ${{ contains(github.event.labels.*.name, 'it''s }} valid') && true }}\njobs:\n  check:\n    runs-on: ubuntu-latest\n    steps:\n      - run: echo done\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.h",
+    "language": "c_header",
+    "source": "#define CHOOSE(x) ((x) ? 1 : 0)\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.c",
+    "language": "c",
+    "source": "#define IF_RUN(x) do { if(x) go(); } while(0)\n",
+    "decisions": 2
+  },
+  {
+    "path": "app.h",
+    "language": "c_header",
+    "source": "#define BEGIN(x) if(x) {\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.h",
+    "language": "c_header",
+    "source": "#define MESSAGE \"if for while ? &&\"\n",
+    "decisions": 0
+  },
+  {
+    "path": "app.ps1",
+    "language": "powershell",
+    "source": "function F {\n go test -count=1 -short ./...\n return $x -and $y\n}\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.hpp",
+    "language": "cpp",
+    "source": "#define BOTH(a,b) ((a) and (b))\n",
+    "decisions": 1
+  },
+  {
+    "path": "app.h",
+    "language": "c_header",
+    "source": "#if A\nint a;\n#elif B\nint b;\n#endif\n",
+    "decisions": 2
+  },
+  {
+    "path": ".github/workflows/check.yml",
+    "language": "yaml",
+    "source": "jobs:\n  check:\n    strategy:\n      matrix:\n        os: [ubuntu-latest, windows-latest]\n    runs-on: ${{ matrix.os }}\n    steps:\n      - run: echo hello\n",
+    "decisions": 0
+  },
+  {
+    "path": "operators.cpp",
+    "language": "cpp",
+    "source": "bool f(int a,int b) {return (a) and (b);}\n",
+    "decisions": 1
+  },
+  {
+    "path": "references.cpp",
+    "language": "cpp",
+    "source": "template<class T> bool f(T&& x) {return true;}\nstruct A {}; bool operator&&(A a,A b){return true;}\n",
+    "decisions": 0
+  },
+  {
+    "path": "assignment.rb",
+    "language": "ruby",
+    "source": "x ||= y\nx &&= z\n",
+    "decisions": 2
+  },
+  {
+    "path": "branches_s390x.s",
+    "language": "assembly",
+    "source": "TEXT f(SB), $0-0\nCMPBEQ R1, R2, end\nBRCTG R3, end\nBL end\nend:\nRET\n",
+    "decisions": 3
+  },
+  {
+    "path": "branches_arm64.s",
+    "language": "assembly",
+    "source": "TEXT f(SB), $0-0\nCBZW R1, end\nBL target(SB)\nend:\nRET\n",
+    "decisions": 1
+  },
+  {
+    "path": "calls_mips64.s",
+    "language": "assembly",
+    "source": "TEXT f(SB), $0-0\nJAL target(SB)\nRET\n",
+    "decisions": 0
+  },
+  {
+    "path": "docs/reference.html",
+    "language": "html",
+    "source": "---\ntitle: Reference\n---\n{{< alert title=\"Tip\" >}}Read this{{< /alert >}}\n<p data-version=\"{{% version %}}\">Reference</p>",
+    "decisions": 0
+  },
+  {
+    "path": "assertion.go.tmpl",
+    "language": "gotemplate",
+    "source": "{{.CommentFormat}}\nfunc {{.DocInfo.Name}}f(t TestingT, {{.ParamsFormat}}) bool {\n if h, ok := t.(tHelper); ok {h.Helper()}\n return {{.DocInfo.Name}}(t, {{.ForwardedParamsFormat}})\n}\n",
+    "decisions": 1
+  },
+  {
+    "path": "angular.html",
+    "language": "html",
+    "source": "<div ng-app=\"app\" ng-if=\"a &amp;&amp; b\" title=\"{{x ? 1 : 2}}\"><button ng-click=\"c ? go() : stop()\">Go</button><p ng-repeat=\"x in (ready ? xs : ys) track by $index\">{{x}}</p></div>",
+    "decisions": 6
+  },
+  {
+    "path": "continuation.mk",
+    "language": "make",
+    "source": "GOPATH := $(shell \\\n set -- ${PATH}; \\\n echo \"$${1}/src\"; \\\n )\n",
+    "decisions": 0
+  },
+  {
+    "path": "Makefile.groups",
+    "language": "make",
+    "source": "check:\n\t@test x || \\\n\t ((git diff | cat) && \\\n\t (echo changed && false))\n",
+    "decisions": 3
+  },
+  {
+    "path": "Makefile.loops",
+    "language": "make",
+    "source": "check:\n\t@for t in x; do \\\n\t if [ -z \"$$t\" ]; then \\\n\t  echo x && echo y; \\\n\t fi \\\n\t done\n",
+    "decisions": 3
+  }
+]

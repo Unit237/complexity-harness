@@ -20,16 +20,18 @@ def cyclomatic_findings(files: list[FileMetric], *, threshold: int) -> list[Find
             severity = "high" if function.cyclomatic >= max(25, threshold * 2) else "medium"
             findings.append(Finding(
                 id=finding_id,
-                kind="cyclomatic-hotspot",
+                kind="structural-hotspot" if file.metric_family=="structure" else "cyclomatic-hotspot",
                 severity=severity,
                 path=file.path,
                 symbol=function.symbol,
                 message=(
-                    f"{function.symbol} has cyclomatic complexity {function.cyclomatic} "
+                    f"{function.symbol} has {file.metric_family} load {function.cyclomatic} "
                     f"against threshold {threshold}."
                 ),
                 factors={
                     "cyclomatic": function.cyclomatic,
+                    "metric_family":file.metric_family,
+                    "language":file.language,
                     "threshold": threshold,
                     "excess": function.cyclomatic - threshold,
                     "definition_occurrence": function.occurrence,

@@ -1,0 +1,1086 @@
+{
+  "schema_version": "complexity-construct-oracle-v1",
+  "convention": "Count explicit choices, short-circuit/default evaluation, loop, case, handler and early propagation decisions. Closures own decisions once. Python/Rust exhaustive arms include the wildcard arm. Nesting does not invent extra cyclomatic decisions.",
+  "cases": [
+    {
+      "id": "javascript:straight",
+      "language": "javascript",
+      "source": "function f(x) {  }",
+      "decisions": 0
+    },
+    {
+      "id": "javascript:if",
+      "language": "javascript",
+      "source": "function f(x) { if (x > 0) { return 1; } }",
+      "decisions": 1
+    },
+    {
+      "id": "javascript:sequential",
+      "language": "javascript",
+      "source": "function f(x) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } }",
+      "decisions": 2
+    },
+    {
+      "id": "javascript:nested",
+      "language": "javascript",
+      "source": "function f(x) { if (x > 0) { if (x < 10) { return 1; } } }",
+      "decisions": 2
+    },
+    {
+      "id": "javascript:short-circuit",
+      "language": "javascript",
+      "source": "function f(x) { if (x > 0 && x < 10) { return 1; } }",
+      "decisions": 2
+    },
+    {
+      "id": "javascript:comments",
+      "language": "javascript",
+      "source": "function f(x) { // if while for && || ?\nif (x > 0) { return 1; } }",
+      "decisions": 1
+    },
+    {
+      "id": "javascript:while",
+      "language": "javascript",
+      "source": "function f(x) { while (x > 0) { break; } }",
+      "decisions": 1
+    },
+    {
+      "id": "typescript:straight",
+      "language": "typescript",
+      "source": "function f(x: any) {  }",
+      "decisions": 0
+    },
+    {
+      "id": "typescript:if",
+      "language": "typescript",
+      "source": "function f(x: any) { if (x > 0) { return 1; } }",
+      "decisions": 1
+    },
+    {
+      "id": "typescript:sequential",
+      "language": "typescript",
+      "source": "function f(x: any) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } }",
+      "decisions": 2
+    },
+    {
+      "id": "typescript:nested",
+      "language": "typescript",
+      "source": "function f(x: any) { if (x > 0) { if (x < 10) { return 1; } } }",
+      "decisions": 2
+    },
+    {
+      "id": "typescript:short-circuit",
+      "language": "typescript",
+      "source": "function f(x: any) { if (x > 0 && x < 10) { return 1; } }",
+      "decisions": 2
+    },
+    {
+      "id": "typescript:comments",
+      "language": "typescript",
+      "source": "function f(x: any) { // if while for && || ?\nif (x > 0) { return 1; } }",
+      "decisions": 1
+    },
+    {
+      "id": "typescript:while",
+      "language": "typescript",
+      "source": "function f(x: any) { while (x > 0) { break; } }",
+      "decisions": 1
+    },
+    {
+      "id": "tsx:straight",
+      "language": "tsx",
+      "source": "function F(x: any) {  return <div/>; }",
+      "decisions": 0
+    },
+    {
+      "id": "tsx:if",
+      "language": "tsx",
+      "source": "function F(x: any) { if (x > 0) { return 1; } return <div/>; }",
+      "decisions": 1
+    },
+    {
+      "id": "tsx:sequential",
+      "language": "tsx",
+      "source": "function F(x: any) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } return <div/>; }",
+      "decisions": 2
+    },
+    {
+      "id": "tsx:nested",
+      "language": "tsx",
+      "source": "function F(x: any) { if (x > 0) { if (x < 10) { return 1; } } return <div/>; }",
+      "decisions": 2
+    },
+    {
+      "id": "tsx:short-circuit",
+      "language": "tsx",
+      "source": "function F(x: any) { if (x > 0 && x < 10) { return 1; } return <div/>; }",
+      "decisions": 2
+    },
+    {
+      "id": "tsx:comments",
+      "language": "tsx",
+      "source": "function F(x: any) { // if while for && || ?\nif (x > 0) { return 1; } return <div/>; }",
+      "decisions": 1
+    },
+    {
+      "id": "tsx:while",
+      "language": "tsx",
+      "source": "function F(x: any) { while (x > 0) { break; } return <div/>; }",
+      "decisions": 1
+    },
+    {
+      "id": "c:straight",
+      "language": "c",
+      "source": "int f(int x) {  return 0; }",
+      "decisions": 0
+    },
+    {
+      "id": "c:if",
+      "language": "c",
+      "source": "int f(int x) { if (x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "c:sequential",
+      "language": "c",
+      "source": "int f(int x) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "c:nested",
+      "language": "c",
+      "source": "int f(int x) { if (x > 0) { if (x < 10) { return 1; } } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "c:short-circuit",
+      "language": "c",
+      "source": "int f(int x) { if (x > 0 && x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "c:comments",
+      "language": "c",
+      "source": "int f(int x) { // if while for && || ?\nif (x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "c:while",
+      "language": "c",
+      "source": "int f(int x) { while (x > 0) { break; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "cpp:straight",
+      "language": "cpp",
+      "source": "int f(int x) {  return 0; }",
+      "decisions": 0
+    },
+    {
+      "id": "cpp:if",
+      "language": "cpp",
+      "source": "int f(int x) { if (x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "cpp:sequential",
+      "language": "cpp",
+      "source": "int f(int x) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "cpp:nested",
+      "language": "cpp",
+      "source": "int f(int x) { if (x > 0) { if (x < 10) { return 1; } } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "cpp:short-circuit",
+      "language": "cpp",
+      "source": "int f(int x) { if (x > 0 && x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "cpp:comments",
+      "language": "cpp",
+      "source": "int f(int x) { // if while for && || ?\nif (x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "cpp:while",
+      "language": "cpp",
+      "source": "int f(int x) { while (x > 0) { break; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "csharp:straight",
+      "language": "csharp",
+      "source": "class A { int F(int x) {  return 0; } }",
+      "decisions": 0
+    },
+    {
+      "id": "csharp:if",
+      "language": "csharp",
+      "source": "class A { int F(int x) { if (x > 0) { return 1; } return 0; } }",
+      "decisions": 1
+    },
+    {
+      "id": "csharp:sequential",
+      "language": "csharp",
+      "source": "class A { int F(int x) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "csharp:nested",
+      "language": "csharp",
+      "source": "class A { int F(int x) { if (x > 0) { if (x < 10) { return 1; } } return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "csharp:short-circuit",
+      "language": "csharp",
+      "source": "class A { int F(int x) { if (x > 0 && x < 10) { return 1; } return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "csharp:comments",
+      "language": "csharp",
+      "source": "class A { int F(int x) { // if while for && || ?\nif (x > 0) { return 1; } return 0; } }",
+      "decisions": 1
+    },
+    {
+      "id": "csharp:while",
+      "language": "csharp",
+      "source": "class A { int F(int x) { while (x > 0) { break; } return 0; } }",
+      "decisions": 1
+    },
+    {
+      "id": "java:straight",
+      "language": "java",
+      "source": "class A { int f(int x) {  return 0; } }",
+      "decisions": 0
+    },
+    {
+      "id": "java:if",
+      "language": "java",
+      "source": "class A { int f(int x) { if (x > 0) { return 1; } return 0; } }",
+      "decisions": 1
+    },
+    {
+      "id": "java:sequential",
+      "language": "java",
+      "source": "class A { int f(int x) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "java:nested",
+      "language": "java",
+      "source": "class A { int f(int x) { if (x > 0) { if (x < 10) { return 1; } } return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "java:short-circuit",
+      "language": "java",
+      "source": "class A { int f(int x) { if (x > 0 && x < 10) { return 1; } return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "java:comments",
+      "language": "java",
+      "source": "class A { int f(int x) { // if while for && || ?\nif (x > 0) { return 1; } return 0; } }",
+      "decisions": 1
+    },
+    {
+      "id": "java:while",
+      "language": "java",
+      "source": "class A { int f(int x) { while (x > 0) { break; } return 0; } }",
+      "decisions": 1
+    },
+    {
+      "id": "go:straight",
+      "language": "go",
+      "source": "package a\nfunc f(x int) int {\n\nreturn 0\n}",
+      "decisions": 0
+    },
+    {
+      "id": "go:if",
+      "language": "go",
+      "source": "package a\nfunc f(x int) int {\nif x > 0 { return 1; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "go:sequential",
+      "language": "go",
+      "source": "package a\nfunc f(x int) int {\nif x > 0 { return 1; }\nif x < 10 { return 1; }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "go:nested",
+      "language": "go",
+      "source": "package a\nfunc f(x int) int {\nif x > 0 { if x < 10 { return 1; } }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "go:short-circuit",
+      "language": "go",
+      "source": "package a\nfunc f(x int) int {\nif x > 0 && x < 10 { return 1; }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "go:comments",
+      "language": "go",
+      "source": "package a\nfunc f(x int) int {\n// if while for && || ?\nif x > 0 { return 1; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "go:while",
+      "language": "go",
+      "source": "package a\nfunc f(x int) int {\nfor x > 0 { break }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "rust:straight",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 {  0 }",
+      "decisions": 0
+    },
+    {
+      "id": "rust:if",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 { if x > 0 { return 1; } 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "rust:sequential",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 { if x > 0 { return 1; }\nif x < 10 { return 1; } 0 }",
+      "decisions": 2
+    },
+    {
+      "id": "rust:nested",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 { if x > 0 { if x < 10 { return 1; } } 0 }",
+      "decisions": 2
+    },
+    {
+      "id": "rust:short-circuit",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 { if x > 0 && x < 10 { return 1; } 0 }",
+      "decisions": 2
+    },
+    {
+      "id": "rust:comments",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 { // if while for && || ?\nif x > 0 { return 1; } 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "rust:while",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 { while x > 0 { break; } 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "php:straight",
+      "language": "php",
+      "source": "<?php function f($x) {  return 0; }",
+      "decisions": 0
+    },
+    {
+      "id": "php:if",
+      "language": "php",
+      "source": "<?php function f($x) { if ($x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "php:sequential",
+      "language": "php",
+      "source": "<?php function f($x) { if ($x > 0) { return 1; }\nif ($x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "php:nested",
+      "language": "php",
+      "source": "<?php function f($x) { if ($x > 0) { if ($x < 10) { return 1; } } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "php:short-circuit",
+      "language": "php",
+      "source": "<?php function f($x) { if ($x > 0 && $x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "php:comments",
+      "language": "php",
+      "source": "<?php function f($x) { // if while for && || ?\nif ($x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "php:while",
+      "language": "php",
+      "source": "<?php function f($x) { while ($x > 0) { break; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "kotlin:straight",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int {\n\nreturn 0\n}",
+      "decisions": 0
+    },
+    {
+      "id": "kotlin:if",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int {\nif (x > 0) { return 1; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "kotlin:sequential",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int {\nif (x > 0) { return 1; }\nif (x < 10) { return 1; }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "kotlin:nested",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int {\nif (x > 0) { if (x < 10) { return 1; } }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "kotlin:short-circuit",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int {\nif (x > 0 && x < 10) { return 1; }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "kotlin:comments",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int {\n// if while for && || ?\nif (x > 0) { return 1; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "kotlin:while",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int {\nwhile (x > 0) { break; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "swift:straight",
+      "language": "swift",
+      "source": "func f(_ x: Int) -> Int {\n\nreturn 0\n}",
+      "decisions": 0
+    },
+    {
+      "id": "swift:if",
+      "language": "swift",
+      "source": "func f(_ x: Int) -> Int {\nif x > 0 { return 1; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "swift:sequential",
+      "language": "swift",
+      "source": "func f(_ x: Int) -> Int {\nif x > 0 { return 1; }\nif x < 10 { return 1; }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "swift:nested",
+      "language": "swift",
+      "source": "func f(_ x: Int) -> Int {\nif x > 0 { if x < 10 { return 1; } }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "swift:short-circuit",
+      "language": "swift",
+      "source": "func f(_ x: Int) -> Int {\nif x > 0 && x < 10 { return 1; }\nreturn 0\n}",
+      "decisions": 2
+    },
+    {
+      "id": "swift:comments",
+      "language": "swift",
+      "source": "func f(_ x: Int) -> Int {\n// if while for && || ?\nif x > 0 { return 1; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "swift:while",
+      "language": "swift",
+      "source": "func f(_ x: Int) -> Int {\nwhile x > 0 { break; }\nreturn 0\n}",
+      "decisions": 1
+    },
+    {
+      "id": "dart:straight",
+      "language": "dart",
+      "source": "int f(int x) {  return 0; }",
+      "decisions": 0
+    },
+    {
+      "id": "dart:if",
+      "language": "dart",
+      "source": "int f(int x) { if (x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "dart:sequential",
+      "language": "dart",
+      "source": "int f(int x) { if (x > 0) { return 1; }\nif (x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "dart:nested",
+      "language": "dart",
+      "source": "int f(int x) { if (x > 0) { if (x < 10) { return 1; } } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "dart:short-circuit",
+      "language": "dart",
+      "source": "int f(int x) { if (x > 0 && x < 10) { return 1; } return 0; }",
+      "decisions": 2
+    },
+    {
+      "id": "dart:comments",
+      "language": "dart",
+      "source": "int f(int x) { // if while for && || ?\nif (x > 0) { return 1; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "dart:while",
+      "language": "dart",
+      "source": "int f(int x) { while (x > 0) { break; } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "javascript:defaults",
+      "language": "javascript",
+      "source": "function f(x = 1, {y = 2} = {}) { return x + y; }",
+      "decisions": 3
+    },
+    {
+      "id": "javascript:destructure-default",
+      "language": "javascript",
+      "source": "function f(x) { const {a = 0} = x; return a; }",
+      "decisions": 1
+    },
+    {
+      "id": "javascript:closure",
+      "language": "javascript",
+      "source": "function f(x) { return y => y ? x : 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "javascript:optional-chain",
+      "language": "javascript",
+      "source": "const f = x => x?.a ?? 0;",
+      "decisions": 2
+    },
+    {
+      "id": "javascript:switch",
+      "language": "javascript",
+      "source": "function f(x) { switch(x) { case 1: return 1; case 2: return 2; default: return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "typescript:defaults",
+      "language": "typescript",
+      "source": "function f(x = 1, {y = 2} = {}) { return x + y; }",
+      "decisions": 3
+    },
+    {
+      "id": "typescript:destructure-default",
+      "language": "typescript",
+      "source": "function f(x) { const {a = 0} = x; return a; }",
+      "decisions": 1
+    },
+    {
+      "id": "typescript:closure",
+      "language": "typescript",
+      "source": "function f(x) { return y => y ? x : 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "typescript:optional-chain",
+      "language": "typescript",
+      "source": "const f = x => x?.a ?? 0;",
+      "decisions": 2
+    },
+    {
+      "id": "typescript:switch",
+      "language": "typescript",
+      "source": "function f(x) { switch(x) { case 1: return 1; case 2: return 2; default: return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "tsx:defaults",
+      "language": "tsx",
+      "source": "function f(x = 1, {y = 2} = {}) { return x + y; }",
+      "decisions": 3
+    },
+    {
+      "id": "tsx:destructure-default",
+      "language": "tsx",
+      "source": "function f(x) { const {a = 0} = x; return a; }",
+      "decisions": 1
+    },
+    {
+      "id": "tsx:closure",
+      "language": "tsx",
+      "source": "function f(x) { return y => y ? x : 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "tsx:optional-chain",
+      "language": "tsx",
+      "source": "const f = x => x?.a ?? 0;",
+      "decisions": 2
+    },
+    {
+      "id": "tsx:switch",
+      "language": "tsx",
+      "source": "function f(x) { switch(x) { case 1: return 1; case 2: return 2; default: return 0; } }",
+      "decisions": 2
+    },
+    {
+      "id": "python:list-comprehension",
+      "language": "python",
+      "source": "def f(xs):\n return [x for x in xs if x > 0]\n",
+      "decisions": 2
+    },
+    {
+      "id": "python:generator",
+      "language": "python",
+      "source": "def f(xs):\n return sum(x for x in xs if x > 0 if x < 9)\n",
+      "decisions": 3
+    },
+    {
+      "id": "python:nested",
+      "language": "python",
+      "source": "def f(x):\n if x:\n  if x > 2:\n   return 1\n return 0\n",
+      "decisions": 2
+    },
+    {
+      "id": "python:boolean",
+      "language": "python",
+      "source": "def f(a,b,c):\n return a and b or c\n",
+      "decisions": 2
+    },
+    {
+      "id": "python:closure",
+      "language": "python",
+      "source": "def f(x):\n return lambda y: x if y else 0\n",
+      "decisions": 1
+    },
+    {
+      "id": "python:match",
+      "language": "python",
+      "source": "def f(x):\n match x:\n  case 1: return 1\n  case _: return 0\n",
+      "decisions": 2
+    },
+    {
+      "id": "python:guarded-match",
+      "language": "python",
+      "source": "def f(x):\n match x:\n  case y if y > 1: return 1\n  case _: return 0\n",
+      "decisions": 3
+    },
+    {
+      "id": "python:except",
+      "language": "python",
+      "source": "def f(x):\n try:\n  return x()\n except ValueError:\n  return 0\n",
+      "decisions": 1
+    },
+    {
+      "id": "python:comments",
+      "language": "python",
+      "source": "def f():\n # if and while else\n return \"if for while and or\"\n",
+      "decisions": 0
+    },
+    {
+      "id": "ruby:straight",
+      "language": "ruby",
+      "source": "def f(x)\n x\nend",
+      "decisions": 0
+    },
+    {
+      "id": "ruby:if",
+      "language": "ruby",
+      "source": "def f(x)\n if x\n  1\n else\n  0\n end\nend",
+      "decisions": 1
+    },
+    {
+      "id": "ruby:boolean",
+      "language": "ruby",
+      "source": "def f(x,y)\n x && y || false\nend",
+      "decisions": 2
+    },
+    {
+      "id": "ruby:loop",
+      "language": "ruby",
+      "source": "def f(xs)\n for x in xs\n  puts x\n end\nend",
+      "decisions": 1
+    },
+    {
+      "id": "ruby:modifier",
+      "language": "ruby",
+      "source": "def f(x)\n return 1 if x\nend",
+      "decisions": 1
+    },
+    {
+      "id": "ruby:unless",
+      "language": "ruby",
+      "source": "def f(x)\n return 1 unless x\nend",
+      "decisions": 1
+    },
+    {
+      "id": "ruby:rescue",
+      "language": "ruby",
+      "source": "def f(x)\n begin\n  x.call\n rescue StandardError\n  nil\n end\nend",
+      "decisions": 1
+    },
+    {
+      "id": "ruby:case",
+      "language": "ruby",
+      "source": "def f(x)\n case x\n when 1\n  1\n when 2\n  2\n else\n  0\n end\nend",
+      "decisions": 2
+    },
+    {
+      "id": "ruby:block",
+      "language": "ruby",
+      "source": "def f(xs)\n xs.map do |x|\n  x ? 1 : 0\n end\nend",
+      "decisions": 1
+    },
+    {
+      "id": "lua:straight",
+      "language": "lua",
+      "source": "function f(x) return x end",
+      "decisions": 0
+    },
+    {
+      "id": "lua:if",
+      "language": "lua",
+      "source": "function f(x) if x then return 1 else return 0 end end",
+      "decisions": 1
+    },
+    {
+      "id": "lua:elseif",
+      "language": "lua",
+      "source": "function f(x) if x==1 then return 1 elseif x==2 then return 2 else return 0 end end",
+      "decisions": 2
+    },
+    {
+      "id": "lua:for",
+      "language": "lua",
+      "source": "function f(xs) for k,v in pairs(xs) do print(v) end end",
+      "decisions": 1
+    },
+    {
+      "id": "lua:numeric-for",
+      "language": "lua",
+      "source": "function f() for i=1,10 do print(i) end end",
+      "decisions": 1
+    },
+    {
+      "id": "lua:while",
+      "language": "lua",
+      "source": "function f(x) while x do break end end",
+      "decisions": 1
+    },
+    {
+      "id": "lua:repeat",
+      "language": "lua",
+      "source": "function f(x) repeat x=x+1 until x>2 end",
+      "decisions": 1
+    },
+    {
+      "id": "lua:boolean",
+      "language": "lua",
+      "source": "function f(x,y) return x and y or false end",
+      "decisions": 2
+    },
+    {
+      "id": "lua:closure",
+      "language": "lua",
+      "source": "function f() return function(x) if x then return 1 end end end",
+      "decisions": 1
+    },
+    {
+      "id": "bash:straight",
+      "language": "bash",
+      "source": "f() { echo ok; }",
+      "decisions": 0
+    },
+    {
+      "id": "bash:if",
+      "language": "bash",
+      "source": "f() { if test x; then echo ok; fi; }",
+      "decisions": 1
+    },
+    {
+      "id": "bash:elif",
+      "language": "bash",
+      "source": "f() { if test x; then echo x; elif test y; then echo y; fi; }",
+      "decisions": 2
+    },
+    {
+      "id": "bash:for",
+      "language": "bash",
+      "source": "f() { for x in a b; do echo \"$x\"; done; }",
+      "decisions": 1
+    },
+    {
+      "id": "bash:while",
+      "language": "bash",
+      "source": "f() { while test x; do break; done; }",
+      "decisions": 1
+    },
+    {
+      "id": "bash:until",
+      "language": "bash",
+      "source": "f() { until test x; do break; done; }",
+      "decisions": 1
+    },
+    {
+      "id": "bash:short-circuit",
+      "language": "bash",
+      "source": "f() { test x && echo ok || echo bad; }",
+      "decisions": 2
+    },
+    {
+      "id": "bash:case",
+      "language": "bash",
+      "source": "f() { case \"$1\" in a) echo a;; b) echo b;; *) echo other;; esac; }",
+      "decisions": 3
+    },
+    {
+      "id": "bash:strings",
+      "language": "bash",
+      "source": "f() { echo \"if while && || for\"; }",
+      "decisions": 0
+    },
+    {
+      "id": "php:foreach",
+      "language": "php",
+      "source": "<?php function f($xs) { foreach ($xs as $x) { echo $x; } }",
+      "decisions": 1
+    },
+    {
+      "id": "php:alternative",
+      "language": "php",
+      "source": "<?php function f($x) { if ($x): return 1; elseif ($x>1): return 2; else: return 0; endif; }",
+      "decisions": 2
+    },
+    {
+      "id": "php:nullish",
+      "language": "php",
+      "source": "<?php function f($x) { return $x ?? 1; }",
+      "decisions": 1
+    },
+    {
+      "id": "csharp:foreach",
+      "language": "csharp",
+      "source": "class A { void F(int[] xs) { foreach(var x in xs) { System.Console.WriteLine(x); } } }",
+      "decisions": 1
+    },
+    {
+      "id": "csharp:expression-bodied",
+      "language": "csharp",
+      "source": "class A { int F(int x) => x > 1 ? 1 : 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "csharp:local-function",
+      "language": "csharp",
+      "source": "class A { int F(int x) { int G(int y) { if(y>0) return 1; return 0; } return G(x); } }",
+      "decisions": 1
+    },
+    {
+      "id": "csharp:switch-expression",
+      "language": "csharp",
+      "source": "class A { int F(int x) => x switch { 1 => 1, 2 => 2, _ => 0 }; }",
+      "decisions": 3
+    },
+    {
+      "id": "cpp:for",
+      "language": "cpp",
+      "source": "int f(int x) { for(int i=0;i<x;i++) { } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "cpp:lambda",
+      "language": "cpp",
+      "source": "int f(int x) { auto g = [](int y) { return y > 1 ? 1 : 0; }; return g(x); }",
+      "decisions": 1
+    },
+    {
+      "id": "cpp:range",
+      "language": "cpp",
+      "source": "int f() { for(auto x : {1,2,3}) { } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "go:range",
+      "language": "go",
+      "source": "package a\nfunc f(xs []int) { for _,x := range xs { println(x) } }",
+      "decisions": 1
+    },
+    {
+      "id": "go:select",
+      "language": "go",
+      "source": "package a\nfunc f(c chan int) { select { case <-c: return; default: return } }",
+      "decisions": 1
+    },
+    {
+      "id": "go:type-switch",
+      "language": "go",
+      "source": "package a\nfunc f(x any) { switch x.(type) { case int: return; case string: return; default: return } }",
+      "decisions": 2
+    },
+    {
+      "id": "rust:question-mark",
+      "language": "rust",
+      "source": "fn f(x: Result<i32, ()>) -> Result<i32, ()> { let y = x?; Ok(y) }",
+      "decisions": 1
+    },
+    {
+      "id": "rust:closure",
+      "language": "rust",
+      "source": "fn f() { let g = |x: bool| if x { 1 } else { 0 }; }",
+      "decisions": 1
+    },
+    {
+      "id": "rust:match",
+      "language": "rust",
+      "source": "fn f(x: i32) -> i32 { match x { 1 => 1, 2 => 2, _ => 0 } }",
+      "decisions": 3
+    },
+    {
+      "id": "rust:if-let",
+      "language": "rust",
+      "source": "fn f(x: Option<i32>) -> i32 { if let Some(y) = x { return y; } 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "kotlin:elvis",
+      "language": "kotlin",
+      "source": "fun f(x: Int?): Int { return x ?: 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "kotlin:for",
+      "language": "kotlin",
+      "source": "fun f(xs: List<Int>) { for(x in xs) { println(x) } }",
+      "decisions": 1
+    },
+    {
+      "id": "kotlin:when",
+      "language": "kotlin",
+      "source": "fun f(x: Int): Int { return when(x) { 1 -> 1; 2 -> 2; else -> 0 } }",
+      "decisions": 2
+    },
+    {
+      "id": "kotlin:lambda",
+      "language": "kotlin",
+      "source": "fun f(xs: List<Int>) = xs.map { x -> if(x>1) 1 else 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "swift:guard",
+      "language": "swift",
+      "source": "func f(_ x: Int?) -> Int { guard let x else { return 0 }; return x }",
+      "decisions": 1
+    },
+    {
+      "id": "swift:for",
+      "language": "swift",
+      "source": "func f(_ xs: [Int]) { for x in xs { print(x) } }",
+      "decisions": 1
+    },
+    {
+      "id": "swift:ternary",
+      "language": "swift",
+      "source": "func f(_ x: Bool) -> Int { x ? 1 : 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "swift:nil-coalescing",
+      "language": "swift",
+      "source": "func f(_ x: Int?) -> Int { x ?? 0 }",
+      "decisions": 1
+    },
+    {
+      "id": "dart:for-in",
+      "language": "dart",
+      "source": "int f(List<int> xs) { for(final x in xs) { print(x); } return 0; }",
+      "decisions": 1
+    },
+    {
+      "id": "dart:ternary",
+      "language": "dart",
+      "source": "int f(bool x) => x ? 1 : 0;",
+      "decisions": 1
+    },
+    {
+      "id": "dart:nullish",
+      "language": "dart",
+      "source": "int f(int? x) => x ?? 0;",
+      "decisions": 1
+    },
+    {
+      "id": "dart:collection-if",
+      "language": "dart",
+      "source": "List<int> f(bool x) => [if(x) 1];",
+      "decisions": 1
+    },
+    {
+      "id": "java:enhanced-for",
+      "language": "java",
+      "source": "class A { void f(int[][] xs) { for (int[] row : xs) { for (int x : row) { System.out.println(x); } } } }",
+      "decisions": 2
+    },
+    {
+      "id": "swift:throwing-call",
+      "language": "swift",
+      "source": "func f() throws { let value = try decode(); print(value) }",
+      "decisions": 0
+    },
+    {
+      "id": "tsx:optional-type",
+      "language": "tsx",
+      "source": "const f = (x: {a?: string}): string | undefined => x.a;",
+      "decisions": 0
+    },
+    {
+      "id": "typescript:optional-parameter",
+      "language": "typescript",
+      "source": "function f(x?: string) { return x; }",
+      "decisions": 0
+    },
+    {
+      "id": "csharp:nullable-type",
+      "language": "csharp",
+      "source": "class A { string? F(string? x) { return x; } }",
+      "decisions": 0
+    },
+    {
+      "id": "php:nullable-type",
+      "language": "php",
+      "source": "<?php function f(?string $x): ?string { return $x; }",
+      "decisions": 0
+    },
+    {
+      "id": "rust:empty-closures",
+      "language": "rust",
+      "source": "fn f() { let g = || { let h = || 1; h() }; g(); }",
+      "decisions": 0
+    },
+    {
+      "id": "go:if-initializer",
+      "language": "go",
+      "source": "package a\nfunc f() { if x, ok := find(); ok { println(x) }; if err := run(); err != nil { return } }",
+      "decisions": 2
+    },
+    {
+      "id": "python:with-context",
+      "language": "python",
+      "source": "def f(x):\n with x:\n  return 1\n",
+      "decisions": 0
+    }
+  ]
+}

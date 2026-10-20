@@ -1,0 +1,8 @@
+{
+  "package": "@babel/parser",
+  "version": "7.29.8",
+  "source": "https://www.npmjs.com/package/@babel/parser/v/7.29.8",
+  "file": "lib/index.js",
+  "sha256": "6969920ae0610df927b6b3e675d1309372c268e36d391652af8e3e0183cbe8f8",
+  "license": "MIT; see BABEL-LICENSE"
+}

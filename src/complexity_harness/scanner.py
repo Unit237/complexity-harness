@@ -1,27 +1,24 @@
 from __future__ import annotations
 
-from fnmatch import fnmatch
 import json
 from pathlib import Path
 import subprocess
+import os
 from typing import Any
 
 from .health import cyclomatic_findings
 from .memory import load_architectural_memory
 from .models import Snapshot
-from .python_analyzer import analyze_python
-
-
-DEFAULT_EXCLUDE = {
-    ".git", ".venv", "venv", "node_modules", "dist", "build",
-    ".build", ".spec", "coverage", "__pycache__", ".pytest_cache",
-    ".mypy_cache", ".tox",
-}
+from .polyglot_analyzer import analyze_bytes
+from .burden import CONTROL_LANGUAGES, STRUCTURAL_LANGUAGES
+from .complexity_languages import classify_path
+from .burden import ANALYZER, MAX_SOURCE_BYTES
+from .source_scope import _is_excluded, source_policy, content_fingerprint, file_fingerprint
 
 
 def _config(root: Path) -> dict[str, Any]:
     path = root / ".complexity" / "config.json"
-    if not path.is_file():
+    if not path.is_file() or path.is_symlink():
         return {}
     return json.loads(path.read_text(encoding="utf-8"))
 
@@ -36,41 +33,6 @@ def _commit(root: Path) -> str | None:
     return completed.stdout.strip() or None if completed.returncode == 0 else None
 
 
-def _matches_pattern(path: str, pattern: str) -> bool:
-    normalized = pattern.replace("\\", "/")
-    while normalized.startswith("./"):
-        normalized = normalized[2:]
-    if not normalized:
-        return False
-    if normalized.endswith("/**"):
-        prefix = normalized[:-3].rstrip("/")
-        if path == prefix or path.startswith(prefix + "/"):
-            return True
-    return fnmatch(path, normalized) or (
-        normalized.startswith("**/") and fnmatch(path, normalized[3:])
-    )
-
-
-def _is_excluded(
-    relative: Path,
-    *,
-    directory_names: set[str],
-    patterns: set[str],
-    workspace_path: str | None,
-) -> bool:
-    if any(part in directory_names for part in relative.parts):
-        return True
-    repository_relative = relative.as_posix()
-    candidates = {repository_relative}
-    if workspace_path:
-        candidates.add(f"{workspace_path.rstrip('/')}/{repository_relative}")
-    return any(
-        _matches_pattern(candidate, pattern)
-        for candidate in candidates
-        for pattern in patterns
-    )
-
-
 def scan_repository(
     root: str | Path,
     *,
@@ -80,24 +42,47 @@ def scan_repository(
 ) -> Snapshot:
     repository_root = Path(root).resolve()
     config = _config(repository_root)
-    configured_exclude = {str(value) for value in config.get("exclude") or []}
-    exclude_names = DEFAULT_EXCLUDE | {
-        value for value in configured_exclude if "/" not in value and "*" not in value
-    }
-    patterns = {
-        value for value in configured_exclude if value not in exclude_names
-    } | {str(value) for value in exclude_patterns or []}
-    files = []
-    for path in sorted(repository_root.rglob("*.py")):
-        relative = path.relative_to(repository_root)
-        if _is_excluded(
-            relative,
-            directory_names=exclude_names,
-            patterns=patterns,
-            workspace_path=workspace_path,
-        ):
+    exclude_names, patterns, scope_hash = source_policy(config, exclude_patterns or ())
+    files, unsupported, unsupported_hashes, entries = [], [], {}, []
+    inventory = subprocess.run(["git", "-C", str(repository_root), "ls-files", "--cached", "--others", "--exclude-standard", "-z"],
+        capture_output=True, text=True, check=False)
+    candidates = []
+    if inventory.returncode == 0:
+        # Ignored build or local files cannot be attributed to a clean commit.
+        candidates = [repository_root / name for name in set(inventory.stdout.split("\0")) if name]
+    else:
+        for directory, names, filenames in os.walk(repository_root):
+            relative_directory = Path(directory).relative_to(repository_root)
+            names[:] = sorted(name for name in names if not _is_excluded(relative_directory / name,
+                directory_names=exclude_names, patterns=patterns, workspace_path=workspace_path))
+            candidates.extend(Path(directory) / name for name in filenames)
+    for path in sorted(candidates):
+        if not path.is_file() and not path.is_symlink():
             continue
-        files.append(analyze_python(path, relative_path=relative.as_posix()))
+        relative = path.relative_to(repository_root)
+        name = relative.as_posix()
+        size=path.lstat().st_size
+        data = os.readlink(path).encode() if path.is_symlink() else path.read_bytes() if size<=MAX_SOURCE_BYTES else None
+        entry = {"path":name, "sha256":content_fingerprint(data) if data is not None else file_fingerprint(path), **classify_path(name)}
+        if _is_excluded(relative,directory_names=exclude_names,patterns=patterns,workspace_path=workspace_path):
+            entry.update(kind="excluded",reason="Repository exclusion policy")
+        eligible = entry["kind"] in {"source","unknown"}
+        if eligible and not path.is_symlink() and data is not None and entry["language"] in CONTROL_LANGUAGES | STRUCTURAL_LANGUAGES:
+            try:
+                metric = analyze_bytes(data,relative_path=name,language=entry["language"])
+                files.append(metric)
+                entry["status"] = "parse_error" if metric.parse_error else "measured"
+                if metric.parse_error:
+                    entry["reason"] = metric.parse_error
+            except UnicodeDecodeError:
+                entry.update(status="unsupported",reason="Source encoding is not UTF-8")
+        elif eligible:
+            entry.update(status="unsupported",reason="Symlink metadata; source is not followed" if path.is_symlink() else f"Source exceeds the {MAX_SOURCE_BYTES}-byte analysis limit" if data is None else "No validated adapter for this file format")
+        else:
+            entry["status"] = entry["kind"]
+        if entry["status"] == "unsupported":
+            unsupported.append(name);unsupported_hashes[name]=entry["sha256"]
+        entries.append(entry)
     threshold = max(2, int(config.get("cyclomatic_threshold") or 15))
     findings = cyclomatic_findings(files, threshold=threshold)
     return Snapshot(
@@ -105,12 +90,17 @@ def scan_repository(
             "name": repository_root.name,
             "root": str(repository_root),
             "commit": _commit(repository_root),
+            "clean": subprocess.run(["git", "-C", str(repository_root), "status", "--porcelain", "--untracked-files=all"],
+                capture_output=True, text=True, check=False).stdout.strip() == "",
             "configuration": {
                 "cyclomatic_threshold": threshold,
                 "required_checks": list(config.get("required_checks") or []),
             },
         },
         files=files,
+        coverage={"analyzer": ANALYZER, "unsupported_paths": unsupported, "unsupported_hashes": unsupported_hashes,
+            "scope_hash": scope_hash, "inventory_complete": True, "inventory": entries,
+            "eligible_files": len(files)+len(unsupported), "inventory_policy": "all-files-v2"},
         findings=findings,
         architectural_memory=load_architectural_memory(
             repository_root,

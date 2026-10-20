@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from typing import Any
+from .complexity_evidence import unpack_file
 
 
 def read_snapshot(path: str | Path) -> dict[str, Any]:
@@ -36,7 +37,7 @@ def validate_snapshot(payload: dict[str, Any]) -> None:
     if isinstance(summary, dict):
         expected = {
             "files": len(payload["files"]),
-            "functions": sum(len(row.get("functions") or []) for row in payload["files"]),
+            "functions": sum(len(unpack_file(row).get("functions") or []) for row in payload["files"]),
             "findings": len(payload["findings"]),
             "architectural_memory_entries": len(payload["architectural_memory"]),
         }

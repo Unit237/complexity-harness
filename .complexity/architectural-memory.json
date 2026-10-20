@@ -18,6 +18,28 @@
       ],
       "decision": "Use cyclomatic findings to locate investigation candidates, then consult architectural memory and verification before authorizing a refactor.",
       "next_trigger": "Any new aggregate score must expose its factors and prove that it improves refactor selection on gold fixtures."
+    },
+    {
+      "id": "MEM-COMPLEXITY-COVERAGE-001",
+      "concept": "measured-source-and-credit-boundary",
+      "status": "accepted-distinction",
+      "summary": "Inventory completeness, syntax coverage and complexity are separate claims. Unrecognized source never becomes a healthy zero score. Diagnostic/configuration/template literals remain protected from displacement.",
+      "evidence": [
+        {
+          "path": "src/complexity_harness/burden.py",
+          "note": "Coverage conserves every inventoried source file and protects unscored data before comparison."
+        },
+        {
+          "path": "tests/test_customer_coverage.py",
+          "note": "Real format cases prove source lines and explicit decisions; unsupported dialects stay unmeasured."
+        },
+        {
+          "path": "benchmarks/calibration-v5.json",
+          "note": "Pinned public stand-ins disclose remaining gaps and finite capacity; they do not prove universal language support or engineering outcomes."
+        }
+      ],
+      "decision": "Add validated readers at the shared producer boundary, retain all file accounting, and label analysis upgrades as baselines without Work credit. Explicit non-executable examples require context-bound source evidence and protected fingerprints. Ordinary invalid source remains unknown; never hide unsupported syntax to reach 100 percent.",
+      "next_trigger": "Any new dialect, parser update, classification change, coverage rounding change or code-to-data displacement path."
     }
   ]
 }
